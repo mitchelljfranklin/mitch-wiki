@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import { RedisService } from '@nestjs-labs/nestjs-ioredis';
 import type { Redis } from 'ioredis';
 import { UserSessionRepo } from '@docmost/db/repos/session/user-session.repo';
@@ -8,17 +8,27 @@ const THROTTLE_SECONDS = 15 * 60; // 15 minutes
 
 @Injectable()
 export class SessionActivityService {
-  private readonly redis: Redis;
+  private readonly redis: Redis | null = null;
 
   constructor(
-    private readonly redisService: RedisService,
+    @Optional() private readonly redisService: RedisService,
     private readonly userSessionRepo: UserSessionRepo,
     private readonly userRepo: UserRepo,
   ) {
-    this.redis = this.redisService.getOrThrow();
+    if (this.redisService) {
+      this.redis = this.redisService.getOrThrow();
+    }
   }
 
   trackActivity(sessionId: string, userId: string, workspaceId: string): void {
+    if (!this.redis) {
+      this.userSessionRepo.updateLastActiveAt(sessionId).catch(() => {});
+      this.userRepo
+        .updateUser({ lastActiveAt: new Date() }, userId, workspaceId)
+        .catch(() => {});
+      return;
+    }
+
     const key = `session:activity:${sessionId}`;
 
     this.redis

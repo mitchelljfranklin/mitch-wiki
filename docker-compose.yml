@@ -7,9 +7,6 @@ services:
     depends_on:
       db:
         condition: service_healthy
-      redis:
-        condition: service_healthy
-        required: false
     environment:
       APP_URL: 'http://localhost:3080'
       APP_SECRET: 'a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6'
