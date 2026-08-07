@@ -71,7 +71,74 @@ All Redis-dependent services use `@Optional()` injection with graceful fallbacks
 6. **Client build in Docker requires `server:build` first**: Nx `server:build` is a dependency of `client:build` in the Dockerfile.
 7. **Favicon injection**: `static.module.ts` serves index.html with workspace favicon. Needs `index: false` on `fastifyStatic` to prevent early interception. Do not remove `NoopAuditModule` — it provides the `AUDIT_SERVICE` token used by 20+ services.
 
-## Nx Cache
+## Coding Standards
+
+### Naming & Readability
+- **No single-letter variables**: Use descriptive names (`authorizationUrl`, `workspaceName`) — never `e`, `j`, `a`, `x`.
+- **No magic numbers**: Extract to named constants with a comment explaining the unit or purpose.  
+  `const THROTTLE_SECONDS = 15 * 60; // 15 minutes` — not `900`.
+- **Descriptive function names**: `getAuthorizationUrl()` not `getUrl()`. Functions should say what they do.
+- **Comments for non-obvious logic**: OIDC flow, workspace middleware bypasses, in-memory queue fallbacks — if it took research to write, it needs a comment.
+
+### Redis-Dependent Services
+All services that use Redis must follow the same pattern:
+```typescript
+constructor(@Optional() private readonly redisService: RedisService) {
+  if (this.redisService) {
+    this.redis = this.redisService.getOrThrow();
+  }
+}
+
+someMethod(): ReturnType {
+  if (!this.redis) {
+    return sensibleFallback; // e.g. true, [], void
+  }
+  // ... Redis logic
+}
+```
+Never assume Redis is available. Every method body must guard with `if (!this.redis)`.
+
+### NestJS
+- Public endpoints use `@Public()` decorator and must be added to `excludedPaths` in `main.ts`.
+- DTOs use `class-validator` decorators. Match the validation pipe's `whitelist: true`.
+- Controllers under `/api/auth/` and `/api/workspace/` are workspace-scoped — inject `@AuthWorkspace()` for the workspace context.
+
+### React
+- Hooks (`useAtom`, `usePageTitle`, `useHasFeature`) must be called at component top-level — never inside conditionals, loops, or early returns.
+- API calls go through `@/lib/api-client.ts`. Never use raw `fetch` or `axios` directly.
+- New feature flags go in `@/features/feature-flags/features.ts`.
+
+## Documentation
+
+### When Adding or Removing a Feature
+- Update `docs/` with a new or updated markdown file in the relevant section.
+- Run `pnpm docs:build` to verify no dead links.
+- Update the sidebar in `docs/.vitepress/config.ts` if adding a new page.
+- Update `docs/index.md` feature cards if adding a headline feature.
+
+### When Changing Environment Variables
+- Update `.env.example` with the new variable and a comment.
+- Update `docs/self-hosting/environment-variables.md` with the variable's description, default, and valid values.
+- Update `docker-compose.yml` if the variable is needed or has changed for the standard deployment.
+
+### When Changing the UI
+- Update `docs/user-guide/` pages affected by the change (screenshots, menu paths, field names).
+- Translation files in `apps/client/public/locales/*/translation.json` may need new keys.
+
+### When Adding a Gotcha
+- Add it to the **Gotchas** section below. If it cost you more than 30 minutes to debug, it belongs here.
+
+### README & AGENTS.md
+- `README.md` stays high-level: what the project is, how to run, license.
+- `AGENTS.md` stays agent-focused: commands, architecture, standards, gotchas. Do not duplicate README content here.
+
+### Before Committing
+```bash
+pnpm run client:build    # Must pass
+pnpm run server:build    # Must pass
+pnpm docs:build          # Must pass (no dead links)
+```
+For Docker-affecting changes, also run `docker compose build app`.
 
 Nx caches build outputs. If builds produce stale results, clear with:
 ```bash
