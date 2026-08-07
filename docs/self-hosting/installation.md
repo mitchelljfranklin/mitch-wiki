@@ -1,0 +1,179 @@
+# Installation
+
+Docker is the recommended mode of installation. If you are a developer, you may be interested in the [development guide](/self-hosting/development).
+
+## Prerequisites
+
+Before you begin, make sure you have Docker installed on your server. See the [official Docker installation guide](https://docs.docker.com/engine/install/) based on your OS.
+
+If you use Ubuntu, you can install Docker with the commands below:
+
+<details>
+  <summary>Click to see Ubuntu docker installation commands</summary>
+
+```shell
+    # Add Docker's official GPG key:
+    sudo apt-get update -qqy
+    sudo apt-get install ca-certificates curl -qqy
+    sudo install -m 0755 -d /etc/apt/keyrings
+    sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+    sudo chmod a+r /etc/apt/keyrings/docker.asc
+    
+    # Add the repository to Apt sources:
+    echo \
+      "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+      $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+      sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+    sudo apt-get update -qqy
+    sudo apt-get install docker-ce docker-ce-cli containerd.io docker-compose-plugin -qqy
+```
+
+</details>
+
+## Installation Steps
+
+### 1. Setup the Docker compose file
+
+Create a new directory for Mitch-Wiki and download the Docker compose file with the commands below:
+
+```shell
+mkdir mitch-wiki
+cd mitch-wiki
+curl -O https://raw.githubusercontent.com/mitchelljfranklin/mitch-wiki/main/docker-compose.yml
+```
+
+Next, open the docker-compose.yml file. On Linux, you can use vim:
+
+```shell
+vi docker-compose.yml
+```
+
+The downloaded `docker-compose.yml` file should contain the template below with default environment variables.
+
+:::info
+`APP_URL` should be the domain you can access Mitch-Wiki from. e.g `https://mitch-wiki.example.com`
+:::
+
+```yaml title="mitch-wiki/docker-compose.yml"
+services:
+  app:
+    image: ghcr.io/mitchelljfranklin/mitch-wiki:latest
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      APP_URL: "http://localhost:3080"
+      APP_SECRET: "REPLACE_WITH_LONG_SECRET"
+      DATABASE_URL: "postgresql://mitch_wiki:STRONG_DB_PASSWORD@db:5432/mitch_wiki"
+      PORT: "3000"
+      STORAGE_DRIVER: "local"
+      MAIL_DRIVER: "smtp"
+      SMTP_HOST: "mailhog"
+      SMTP_PORT: "1025"
+      SMTP_USERNAME: ""
+      SMTP_PASSWORD: ""
+      SMTP_SECURE: "false"
+      MAIL_FROM_ADDRESS: "noreply@mitch-wiki.local"
+      MAIL_FROM_NAME: "Mitch Wiki"
+    ports:
+      - "3080:3000"
+    restart: unless-stopped
+    volumes:
+      - mitch_wiki_data:/app/data/storage
+
+  db:
+    image: postgres:18
+    environment:
+      POSTGRES_DB: mitch_wiki
+      POSTGRES_USER: mitch_wiki
+      POSTGRES_PASSWORD: STRONG_DB_PASSWORD
+    restart: unless-stopped
+    volumes:
+      - db_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mitch_wiki -d mitch_wiki"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+    restart: unless-stopped
+
+volumes:
+  mitch_wiki_data:
+  db_data:
+```
+
+For health check, a dedicated endpoint is available at `YOUR_URL/api/health`.
+
+### Replace the default configs
+
+You are to replace the default environment variables in the `docker-compose.yml` file.
+
+The `APP_URL` should be replaced with your chosen domain. E.g. `https://example.com` or `https://mitch-wiki.example.com`.
+
+The `APP_SECRET` value must be replaced with a long random secret key (32 characters minimum).
+You can generate the secret with `openssl rand -hex 32`. If you leave the default value, the app will fail to start.
+
+Replace `STRONG_DB_PASSWORD` in the `POSTGRES_PASSWORD` environment variable with a secure password.
+
+Update the `DATABASE_URL` default `STRONG_DB_PASSWORD` value with your chosen Postgres password.
+
+To configure Emails or File storage driver, see the [Configuration](/self-hosting/configuration) doc.
+The default File storage driver is `local storage`. You don't have to do anything unless you wish to use [S3](/self-hosting/configuration#using-s3-compatible-storage) or [Azure Blob Storage](/self-hosting/configuration#using-azure-blob-storage).
+
+### Start the Services
+
+Make sure you are inside the `mitch-wiki` directory which contains the `docker-compose.yml` file.
+
+To start the services, run:
+
+```shell
+docker compose up -d
+```
+
+Once the services are up and running, verify the installation by opening your web browser and navigating to:
+`http://localhost:3080` or the domain that points to your server.
+
+If all is set, you should see the Mitch-Wiki setup page which will enable you set up your workspace and account.
+
+:::tip
+To set up a custom domain and SSL, see our [reverse-proxy guide](/self-hosting/reverse-proxy/)
+:::
+
+![Mitch-Wiki Setup](https://placehold.co/800x450/2b7af1/white?text=Mitch+Wiki+Setup)
+
+After a successful setup, you become the workspace owner. You can then invite other users to join your workspace.
+
+:::warning[Reverse Proxy / WebSockets]
+If you are using a reverse proxy, make sure WebSockets is enabled. The real-time page editor depends on WebSockets to work.
+:::
+
+If you encounter any issues, feel free to create a discussion on the [GitHub repo](https://github.com/mitchelljfranklin/mitch-wiki/discussions).
+
+## Upgrade
+
+To upgrade to the latest Mitch-Wiki version, run the following commands:
+
+```shell
+docker pull ghcr.io/mitchelljfranklin/mitch-wiki:latest
+docker compose up --force-recreate --build app -d
+```
+
+## Helpful docker commands
+
+To stop the services:
+
+```shell
+docker compose down
+```
+
+To restart the services:
+
+```shell
+docker compose restart
+```
