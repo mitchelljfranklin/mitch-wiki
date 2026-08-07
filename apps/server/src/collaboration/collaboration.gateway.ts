@@ -44,7 +44,9 @@ export class CollaborationGateway {
     private collabEventsService: CollaborationHandler,
   ) {
     this.redisConfig = parseRedisUrl(this.environmentService.getRedisUrl());
-    this.withRedis = !this.environmentService.isCollabDisableRedis();
+    this.withRedis =
+      this.environmentService.isRedisEnabled() &&
+      !this.environmentService.isCollabDisableRedis();
 
     this.hocuspocus = new Hocuspocus({
       debounce: 10000,

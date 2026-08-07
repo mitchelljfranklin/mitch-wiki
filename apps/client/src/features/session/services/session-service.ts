@@ -13,5 +13,7 @@ export async function revokeSession(data: {
 }
 
 export async function revokeAllSessions(): Promise<void> {
-  await api.post("/sessions/revoke-all");
+  await api.post("/sessions/revoke-all", {}, {
+    headers: { "Content-Type": "application/json" },
+  });
 }

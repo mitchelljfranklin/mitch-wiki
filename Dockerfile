@@ -1,5 +1,5 @@
 FROM node:26-slim AS base
-LABEL org.opencontainers.image.source="https://github.com/home/mitch-wiki"
+LABEL org.opencontainers.image.source="https://github.com/mitchelljfranklin/mitch-wiki"
 
 RUN npm install -g pnpm@11.15.1
 

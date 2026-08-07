@@ -41,3 +41,7 @@ lerna-debug.log*
 .nx
 .nx/installation
 .nx/cache
+
+# VitePress
+docs/.vitepress/cache
+docs/.vitepress/dist

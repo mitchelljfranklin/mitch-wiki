@@ -2,7 +2,9 @@ import api from "@/lib/api-client";
 import { ICurrentUser, IUser } from "@/features/user/types/user.types";
 
 export async function getMyInfo(): Promise<ICurrentUser> {
-  const req = await api.post<ICurrentUser>("/users/me");
+  const req = await api.post<ICurrentUser>("/users/me", {}, {
+    headers: { "Content-Type": "application/json" },
+  });
   return req.data as ICurrentUser;
 }
 

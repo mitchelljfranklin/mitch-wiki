@@ -3,6 +3,7 @@
   "homepage": "https://docmost.com",
   "version": "0.95.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "build": "nx run-many -t build",
     "start": "pnpm --filter ./apps/server run start:prod",
@@ -16,6 +17,9 @@
     "server:start": "nx run server:start:prod",
     "email:dev": "nx run server:email:dev",
     "dev": "pnpm concurrently -n \"frontend,backend\" -c \"cyan,green\" \"pnpm run client:dev\" \"pnpm run server:dev\"",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs",
     "clean": "rm -rf apps/*/dist packages/*/dist apps/client/node_modules/.vite"
   },
   "dependencies": {
@@ -87,7 +91,8 @@
     "@types/turndown": "5.0.6",
     "concurrently": "9.2.3",
     "nx": "22.6.1",
-    "tsx": "^4.21.0"
+    "tsx": "^4.21.0",
+    "vitepress": "^1.6.4"
   },
   "workspaces": {
     "packages": [

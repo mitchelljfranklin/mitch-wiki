@@ -11,6 +11,7 @@ import {
   Box,
   Anchor,
   Group,
+  Stack,
 } from "@mantine/core";
 import classes from "./auth.module.css";
 import { useRedirectIfAuthenticated } from "@/features/auth/hooks/use-redirect-if-authenticated.ts";
@@ -40,6 +41,9 @@ export function LoginForm() {
     isError,
     error,
   } = useWorkspacePublicDataQuery();
+
+  const authProviders = data?.authProviders ?? [];
+  const hasAuthProviders = authProviders.length > 0;
 
   const form = useForm<FormValues>({
     validate: zod4Resolver(formSchema),
@@ -76,6 +80,21 @@ export function LoginForm() {
             {t("Login")}
           </Title>
 
+          {hasAuthProviders && (
+            <Stack mb="md">
+              {authProviders.map((provider) => (
+                <Button
+                  key={provider.id}
+                  component="a"
+                  href={`/api/sso/oidc/${provider.id}/login`}
+                  fullWidth
+                  variant="outline"
+                >
+                  {provider.name}
+                </Button>
+              ))}
+            </Stack>
+          )}
           {!data?.enforceSso && (
             <>
               <form onSubmit={form.onSubmit(onSubmit, handleValidationFailure)}>

@@ -9,7 +9,20 @@ const api: AxiosInstance = axios.create({
 
 api.interceptors.response.use(
   (response) => {
-    // we need the response headers for these endpoints
+    // Redirect to setup when no workspace exists (public endpoint returns 200 null)
+    if (
+      response.data?.data === null &&
+      response.request?.responseURL?.includes("/workspace/public")
+    ) {
+      if (
+        !isCloud() &&
+        !window.location.pathname.startsWith(APP_ROUTE.AUTH.SETUP)
+      ) {
+        window.location.href = APP_ROUTE.AUTH.SETUP;
+      }
+    }
+
+    // Preserve full response for endpoints that need headers (exports)
     const exemptEndpoints = [
       "/api/pages/export",
       "/api/spaces/export",
@@ -32,32 +45,26 @@ api.interceptors.response.use(
           const url = new URL(error.request.responseURL)?.pathname;
           if (url === "/api/auth/collab-token") return;
           if (window.location.pathname.startsWith("/share/")) return;
-
-          // Handle unauthorized error
           redirectToLogin();
           break;
         }
         case 403:
-          // Handle forbidden error
           break;
         case 404:
-          // Handle not found error
           if (
             error.response.data.message
-              .toLowerCase()
-              .includes("workspace not found")
+              ?.toLowerCase()
+              ?.includes("workspace not found")
           ) {
-            console.log("workspace not found");
             if (
               !isCloud() &&
-              window.location.pathname != APP_ROUTE.AUTH.SETUP
+              !window.location.pathname.startsWith(APP_ROUTE.AUTH.SETUP)
             ) {
               window.location.href = APP_ROUTE.AUTH.SETUP;
             }
           }
           break;
         case 500:
-          // Handle internal server error
           break;
         default:
           break;

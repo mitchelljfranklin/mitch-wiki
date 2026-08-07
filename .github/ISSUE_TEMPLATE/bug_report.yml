@@ -1,0 +1,98 @@
+name: Bug Report
+description: Report a bug or unexpected behavior
+title: "[Bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug report. Please fill out the form below.
+
+        Before submitting, search [existing issues](https://github.com/mitchelljfranklin/mitch-wiki/issues?q=is%3Aissue+label%3Abug) to avoid duplicates.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Provide a clear, concise description of the bug.
+      placeholder: "When I click 'Save Page' the server returns a 500 error."
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: List the steps that trigger the bug. If you can, include a minimal example.
+      placeholder: |
+        1. Navigate to '...'
+        2. Click on '...'
+        3. Scroll down to '...'
+        4. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+      description: What should have happened instead?
+      placeholder: "The page should save successfully and show a success notification."
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs or error output
+      description: Paste any server logs, browser console errors, or API responses. Use ``` for formatting.
+      render: shell
+
+  - type: input
+    id: version
+    attributes:
+      label: Mitch-Wiki version
+      description: What version are you running? Find it on the Settings page or `docker compose exec app pnpm --filter server start` logs.
+      placeholder: "0.95.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: deployment
+    attributes:
+      label: How are you running Mitch-Wiki?
+      options:
+        - Docker Compose (production)
+        - Docker Compose (development)
+        - Local development (pnpm dev)
+        - Kubernetes
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Host OS
+      options:
+        - Linux (amd64)
+        - Linux (arm64 / Raspberry Pi)
+        - macOS
+        - Windows
+        - Other
+
+  - type: textarea
+    id: browser
+    attributes:
+      label: Browser (for UI bugs)
+      description: Browser name and version.
+      placeholder: "Firefox 134.0, Chrome 132.0"
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Confirmations
+      options:
+        - label: This bug is reproducible on the latest release version
+        - label: I have checked there are no duplicate issues
+        - label: I have included logs or error output (if available)

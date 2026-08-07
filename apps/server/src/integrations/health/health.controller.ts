@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Optional } from '@nestjs/common';
 import { HealthCheck, HealthCheckService } from '@nestjs/terminus';
 import { PostgresHealthIndicator } from './postgres.health';
 import { RedisHealthIndicator } from './redis.health';
@@ -9,17 +9,22 @@ export class HealthController {
   constructor(
     private health: HealthCheckService,
     private postgres: PostgresHealthIndicator,
-    private redis: RedisHealthIndicator,
+    @Optional() private redis: RedisHealthIndicator,
   ) {}
 
   @SkipTransform()
   @Get()
   @HealthCheck()
   async check() {
-    return this.health.check([
-      () => this.postgres.pingCheck('database'),
-      () => this.redis.pingCheck('redis'),
-    ]);
+    const healthChecks = [() => this.postgres.pingCheck('database')];
+
+    // Only include the Redis health check when the indicator is available.
+    // When REDIS_URL is not configured, the Redis provider is skipped.
+    if (this.redis) {
+      healthChecks.push(() => this.redis.pingCheck('redis'));
+    }
+
+    return this.health.check(healthChecks);
   }
 
   @Get('live')

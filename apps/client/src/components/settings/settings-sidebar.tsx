@@ -92,7 +92,6 @@ const groupedData: DataGroup[] = [
         label: "Security & SSO",
         icon: IconLock,
         path: "/settings/security",
-        feature: Feature.SECURITY_SETTINGS,
         role: "admin",
       },
       { label: "Groups", icon: IconUsersGroup, path: "/settings/groups" },

@@ -24,6 +24,7 @@ export class EnvironmentVariables {
   )
   DATABASE_URL: string;
 
+  @IsOptional()
   @IsNotEmpty()
   @IsUrl(
     {
@@ -33,7 +34,7 @@ export class EnvironmentVariables {
     },
     { message: 'REDIS_URL must be a valid redis connection string' },
   )
-  REDIS_URL: string;
+  REDIS_URL?: string;
 
   @IsOptional()
   @IsUrl({ protocols: ['http', 'https'], require_tld: false })

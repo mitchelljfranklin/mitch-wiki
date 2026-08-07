@@ -18,7 +18,9 @@ export async function getWorkspace(): Promise<IWorkspace> {
 }
 
 export async function getWorkspacePublicData(): Promise<IPublicWorkspace> {
-  const req = await api.post<IPublicWorkspace>("/workspace/public");
+  const req = await api.post<IPublicWorkspace>("/workspace/public", {}, {
+    headers: { "Content-Type": "application/json" },
+  });
   return req.data;
 }
 
@@ -119,6 +121,8 @@ export async function createWorkspace(
 }
 
 export async function getAppVersion(): Promise<IVersion> {
-  const req = await api.post("/version");
+  const req = await api.post("/version", {}, {
+    headers: { "Content-Type": "application/json" },
+  });
   return req.data;
 }

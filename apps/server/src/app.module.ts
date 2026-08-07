@@ -26,6 +26,9 @@ import { LoggerModule } from './common/logger/logger.module';
 import { ClsModule } from 'nestjs-cls';
 import { ThrottleModule } from './integrations/throttle/throttle.module';
 import { NoopAuditModule } from './integrations/audit/audit.module';
+import { PERMISSION_CACHE_TTL_MS } from './common/helpers/cache-keys';
+
+const redisIsEnabled = !!process.env.REDIS_URL;
 
 @Module({
   imports: [
@@ -37,24 +40,38 @@ import { NoopAuditModule } from './integrations/audit/audit.module';
     CoreModule,
     DatabaseModule,
     EnvironmentModule,
-    RedisModule.forRootAsync({
-      useClass: RedisConfigService,
-    }),
+    // Only connect to Redis when REDIS_URL is configured.
+    // When disabled, all subsystems fall back to in-memory alternatives.
+    ...(redisIsEnabled
+      ? [
+          RedisModule.forRootAsync({
+            useClass: RedisConfigService,
+          }),
+        ]
+      : []),
     CacheModule.registerAsync({
       isGlobal: true,
       useFactory: async (environmentService: EnvironmentService) => {
-        const redisUrl = environmentService.getRedisUrl();
+        // When Redis is enabled, use KeyvRedis as the cache store for
+        // shared cache across multiple app instances.
+        // When disabled, fall back to an in-memory LRU cache.
+        if (environmentService.isRedisEnabled()) {
+          const redisUrl = environmentService.getRedisUrl();
+          return {
+            ttl: PERMISSION_CACHE_TTL_MS,
+            stores: [new KeyvRedis(redisUrl)],
+          };
+        }
 
         return {
-          ttl: 5 * 1000,
-          stores: [new KeyvRedis(redisUrl)],
+          ttl: PERMISSION_CACHE_TTL_MS,
         };
       },
       inject: [EnvironmentService],
     }),
     CollaborationModule,
     WsModule,
-    QueueModule,
+    QueueModule.forRoot(),
     StaticModule,
     HealthModule,
     ImportModule,

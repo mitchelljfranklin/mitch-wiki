@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import { RedisService } from '@nestjs-labs/nestjs-ioredis';
 import type { Redis } from 'ioredis';
 
@@ -6,25 +6,30 @@ const REDIS_KEY_PREFIX = 'history:contributors:';
 
 @Injectable()
 export class CollabHistoryService {
-  private readonly redis: Redis;
+  private readonly redis: Redis | null = null;
 
-  constructor(private readonly redisService: RedisService) {
-    this.redis = this.redisService.getOrThrow();
+  constructor(@Optional() private readonly redisService: RedisService) {
+    if (this.redisService) {
+      this.redis = this.redisService.getOrThrow();
+    }
   }
 
   async addContributors(pageId: string, userIds: string[]): Promise<void> {
-    if (userIds.length === 0) return;
+    if (!this.redis || userIds.length === 0) return;
     await this.redis.sadd(REDIS_KEY_PREFIX + pageId, ...userIds);
   }
 
   async popContributors(pageId: string): Promise<string[]> {
-    const key = REDIS_KEY_PREFIX + pageId;
-    const count = await this.redis.scard(key);
-    if (count === 0) return [];
-    return await this.redis.spop(key, count);
+    if (!this.redis) return [];
+    const members = await this.redis.smembers(REDIS_KEY_PREFIX + pageId);
+    if (members.length > 0) {
+      await this.redis.del(REDIS_KEY_PREFIX + pageId);
+    }
+    return members;
   }
 
   async clearContributors(pageId: string): Promise<void> {
+    if (!this.redis) return;
     await this.redis.del(REDIS_KEY_PREFIX + pageId);
   }
 }

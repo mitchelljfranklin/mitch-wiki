@@ -28,6 +28,7 @@ import SpacesPage from "@/pages/spaces/spaces.tsx";
 import SpaceTrash from "@/pages/space/space-trash.tsx";
 import FavoritesPage from "@/pages/favorites/favorites-page";
 import LabelPage from "@/pages/label/label-page";
+import SecuritySettings from "@/pages/settings/security-settings";
 import { useRedirectToCloudSelect } from "@/features/feature-flags/use-redirect-to-cloud-select";
 
 export default function App() {
@@ -83,6 +84,7 @@ export default function App() {
             <Route path={"groups/:groupId"} element={<GroupInfo />} />
             <Route path={"spaces"} element={<Spaces />} />
             <Route path={"sharing"} element={<Shares />} />
+            <Route path={"security"} element={<SecuritySettings />} />
           </Route>
         </Route>
 
