@@ -70,6 +70,12 @@ All Redis-dependent services use `@Optional()` injection with graceful fallbacks
 5. **Postgres 18 volume path**: Must mount at `/var/lib/postgresql` (not `/var/lib/postgresql/data`). The compose file already handles this.
 6. **Client build in Docker requires `server:build` first**: Nx `server:build` is a dependency of `client:build` in the Dockerfile.
 7. **Favicon injection**: `static.module.ts` serves index.html with workspace favicon. Needs `index: false` on `fastifyStatic` to prevent early interception. Do not remove `NoopAuditModule` — it provides the `AUDIT_SERVICE` token used by 20+ services.
+8. **Feature flag stubs return false**: All `useHasFeature()` calls return `false` since EE removal. To enable a feature, update the stub at `@/features/feature-flags/use-feature.ts` or add the feature to `@/features/feature-flags/features.ts`.
+9. **Soft-delete in auth_providers**: `deleteProvider` does a soft-delete (`deletedAt`), not a hard delete. Queries must include `where('deletedAt', 'is', null)` to exclude deleted records. Both `findByWorkspaceId` (admin) and `getWorkspacePublicData` (login page) must filter this.
+10. **OIDC nonce validation**: `openid-client` v6's `authorizationCodeGrant` validates the nonce internally if `expectedNonce` is passed. Must provide it from the stored state entry — otherwise the callback fails with `OAUTH_JWT_CLAIM_COMPARISON_FAILED`.
+11. **SSO provider IDs are UUIDs**: The provider ID field is `id` (UUID from DB), not `providerId`. SSO buttons and callback URLs use `provider.id`.
+12. **`api.patch()` not supported**: The API client wraps axios with only GET/POST/PUT/DELETE. If you need PATCH, add it to the client. Most endpoints use POST for everything.
+13. **Server CommonJS, root ESM**: The root `package.json` has `"type": "module"` (needed for VitePress). The server uses `"module": "commonjs"` in its tsconfig. Do not change either — the NestJS build handles the CJS output correctly.
 
 ## Coding Standards
 
