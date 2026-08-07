@@ -1,0 +1,79 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mitch-wiki
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      APP_URL: 'http://localhost:3080'
+      APP_SECRET: 'a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6'
+      DATABASE_URL: 'postgresql://mitch_wiki:mitch_wiki_password@db:5432/mitch_wiki'
+      REDIS_URL: 'redis://redis:6379'
+      PORT: '3000'
+      STORAGE_DRIVER: 'local'
+      MAIL_DRIVER: 'smtp'
+      SMTP_HOST: 'mailhog'
+      SMTP_PORT: '1025'
+      SMTP_USERNAME: ''
+      SMTP_PASSWORD: ''
+      SMTP_SECURE: 'false'
+      SMTP_IGNORETLS: 'true'
+      MAIL_FROM_ADDRESS: 'noreply@mitch-wiki.local'
+      MAIL_FROM_NAME: 'Mitch Wiki'
+      DISABLE_TELEMETRY: 'true'
+    ports:
+      - "3080:3000"
+    restart: unless-stopped
+    volumes:
+      - mitch_wiki_data:/app/data/storage
+
+  db:
+    image: postgres:18
+    container_name: mitch-wiki-db
+    environment:
+      POSTGRES_DB: mitch_wiki
+      POSTGRES_USER: mitch_wiki
+      POSTGRES_PASSWORD: mitch_wiki_password
+    restart: unless-stopped
+    ports:
+      - "5433:5432"
+    volumes:
+      - db_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mitch_wiki -d mitch_wiki"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:8
+    container_name: mitch-wiki-redis
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory-policy", "noeviction"]
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: mitch-wiki-mailhog
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+    restart: unless-stopped
+
+volumes:
+  mitch_wiki_data:
+  db_data:
+  redis_data:
