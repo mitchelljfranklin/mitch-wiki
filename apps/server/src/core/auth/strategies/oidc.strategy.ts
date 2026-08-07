@@ -224,6 +224,7 @@ export class OidcService {
       {
         pkceCodeVerifier: codeVerifier,
         expectedState: state,
+        expectedNonce: storedStateEntry.nonce,
       },
     );
 
