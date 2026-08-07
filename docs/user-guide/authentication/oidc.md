@@ -1,68 +1,68 @@
----
-sidebar_position: 3
----
+# OIDC Single Sign-On
 
-# OIDC
+Mitch-Wiki supports Single Sign-On (SSO) through OpenID Connect (OIDC), allowing users to authenticate with any compatible identity provider.
 
-Mitch-Wiki supports authentication through OpenID Connect (OIDC), allowing integration with any identity provider that supports the OIDC standard.
+**Supported providers include:** Azure AD (Entra ID), Google Workspace, Okta, Keycloak, Auth0, Authentik, and other OIDC-compatible IdPs.
 
-<p align="center">
-<img src="https://placehold.co/800x450/2b7af1/white?text=Mitch+Wiki+OIDC+Auth" width="350"/>
-</p>
+## How to Configure
 
-### How to configure OpenID Connect (OIDC):
+### 1. Navigate to Security Settings
 
-1. **Navigate to Security Settings**
-    - Go to **Settings** → **Security & SSO** in your Mitch-Wiki dashboard.
+Go to **Settings → Security & SSO**. Only workspace admins can manage SSO.
 
-2. **Create a New SSO Integration**
-    - Click on the **"Create SSO"** button.
-    - Select **"OpenID (OIDC)"** from the dropdown menu. This opens a configuration popup.
+### 2. Add a Provider
 
-3. **Configure Your OIDC Integration**
-    - Enter a descriptive **Display Name** for this integration (e.g., "Company SSO").
-    - Copy the provided **Callback URL**. You’ll need to add this URL to your OIDC provider’s allowed redirect URIs.
+Click **Add Provider**. The only supported type is **OpenID Connect**.
 
-4. **Enter Your OIDC Provider Details**
-    - **Issuer URL:** Provide the Issuer URL from your OIDC provider.
-    - **Client ID:** Paste the Client ID obtained from your OIDC provider.
-    - **Client Secret:** Paste the Client Secret obtained from your OIDC provider.
+### 3. Fill in Provider Details
 
-5. **Additional Configuration Options**
-    - To automatically provision users upon their first login, enable the **"Allow Signup"** toggle.
-    - To activate this integration immediately, enable the **"Enabled"** toggle.
+| Field | Description |
+|---|---|
+| **Provider Name** | A display name shown on the login button (e.g., "Company SSO", "Azure AD") |
+| **Issuer URL** | Your IdP's OIDC discovery URL (e.g., `https://login.microsoftonline.com/{tenant-id}/v2.0`) |
+| **Client ID** | The OAuth client ID from your IdP |
+| **Client Secret** | The OAuth client secret from your IdP |
 
-6. **Save Your Configuration**
-    - Click **"Save"** to apply your settings.
+### 4. Copy the Redirect URI
 
-After successful configuration, your OIDC provider will appear as an available login method on the Mitch-Wiki login page. Users can now authenticate through your configured OIDC integration.
+Each provider card shows its **Redirect URI** with a copy button. Use this URL when configuring your IdP's allowed redirect/callback URLs:
 
-## Group Synchronization
+```
+https://{your-domain}/api/sso/oidc/{provider-id}/callback
+```
 
-### How Group Sync Works
+### 5. Configure Your Identity Provider
 
-When group synchronization is enabled, Mitch-Wiki automatically manages user group memberships based on the group claims returned by your OIDC provider on each login.
+In your IdP (Azure AD, Google, Okta, etc.):
 
-Mitch-Wiki reads groups from the `groups` or `roles` claim in the userinfo response. The claim can be an array of strings or a single comma- or semicolon-separated string.
+- **Redirect URI / Callback URL:** The URL shown on the provider card
+- **Grant Type:** Authorization Code with PKCE
+- **Scopes:** `openid profile email`
+- **Token Endpoint Auth Method:** `client_secret_post` (recommended) or `client_secret_basic`
 
-⚠️ **Groups must be pre-created in Mitch-Wiki**: OIDC group synchronization does NOT create new groups. You must manually create groups in Mitch-Wiki with names that match the values returned by your IdP. Matching is case-insensitive.
+### 6. Finalize
 
-### Setting Up Group Sync
+- **Allow automatic sign-up:** If enabled, new users are automatically created on first SSO login
+- **Enable provider:** Activate the provider immediately (can be toggled later)
 
-1. **Configure your OIDC Provider** to include a `groups` (or `roles`) claim in the userinfo response or ID token. Most providers (Okta, Keycloak, Auth0, Microsoft Entra ID) require an explicit scope or claim mapping to be added.
+Click **Add Provider** to save.
 
-2. **Create Groups in Mitch-Wiki**:
-   ```
-   Example OIDC groups claim:
-   {
-     "groups": ["Engineering", "Marketing", "HR-Team"]
-   }
+## Login Experience
 
-   Create corresponding Mitch-Wiki groups:
-   - Engineering
-   - Marketing
-   - HR-Team
-   ```
-   Learn more about Mitch-Wiki [Groups Documentation](/user-guide/groups).
+Once configured and enabled, the provider appears as a button on the login page. Users click the button to authenticate through your IdP.
 
-3. **Enable Group Sync** in the OIDC provider configuration.
+To require SSO for all users, enable the **Enforce SSO** toggle on the Security settings page. When enabled, the password login form is hidden and users must authenticate via SSO.
+
+## Editing a Provider
+
+Click the **pencil icon** on any provider card to edit its configuration. When editing, leave the **Client Secret** field blank to keep the current secret unchanged.
+
+## Troubleshooting
+
+| Issue | Solution |
+|---|---|
+| "OIDC provider not found" | Ensure the provider is enabled and the ID in the URL matches |
+| "OIDC state mismatch" | The login session expired. Try logging in again within 10 minutes |
+| "OIDC nonce mismatch" | The login session expired. Try logging in again |
+| "No account found" | Enable "Allow automatic sign-up" to auto-create users, or manually create the user account first |
+| Provider not showing on login page | Ensure the provider is enabled AND the redirect URI is correct in your IdP |
