@@ -25,9 +25,14 @@ export async function createAuthProvider(
 
 export async function updateAuthProvider(
   id: string,
-  data: Partial<AuthProvider>,
+  data: Partial<AuthProvider> & { oidcClientSecret?: string },
 ): Promise<AuthProvider> {
-  const response = await api.put<AuthProvider>(`/auth/providers/${id}`, data);
+  // Strip empty secret so the server keeps the existing one
+  const payload = { ...data };
+  if (!payload.oidcClientSecret) {
+    delete payload.oidcClientSecret;
+  }
+  const response = await api.put<AuthProvider>(`/auth/providers/${id}`, payload);
   return response.data;
 }
 

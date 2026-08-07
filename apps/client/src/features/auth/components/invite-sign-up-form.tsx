@@ -83,7 +83,7 @@ export function InviteSignUpForm() {
               <Button
                 key={provider.id}
                 component="a"
-                href={`/api/sso/oidc/${provider.providerId}/login`}
+                href={`/api/sso/oidc/${provider.id}/login`}
                 fullWidth
                 variant="outline"
               >

@@ -26,6 +26,7 @@ import { IconTrash, IconEdit } from "@tabler/icons-react";
 import {
   getAuthProviders,
   createAuthProvider,
+  updateAuthProvider,
   deleteAuthProvider,
 } from "@/features/auth/services/sso-service";
 import useUserRole from "@/hooks/use-user-role.tsx";
@@ -54,7 +55,7 @@ export default function SecuritySettings() {
   const [workspace] = useAtom(workspaceAtom);
   const enforceSso = workspace?.enforceSso ?? false;
 
-  const [createOpened, { open: openCreate, close: closeCreate }] =
+  const [modalOpened, { open: openModal, close: closeModal }] =
     useDisclosure(false);
   const [editProviderId, setEditProviderId] = useState<string | null>(null);
 
@@ -63,17 +64,28 @@ export default function SecuritySettings() {
     queryFn: getAuthProviders,
   });
 
-  const createMutation = useMutation({
-    mutationFn: createAuthProvider,
+  const saveMutation = useMutation({
+    mutationFn: async (values: typeof INITIAL_VALUES) => {
+      if (editProviderId) {
+        await updateAuthProvider(editProviderId, values);
+      } else {
+        await createAuthProvider(values);
+      }
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["auth-providers"] });
-      notifications.show({ message: t("SSO provider created") });
-      closeCreate();
+      notifications.show({
+        message: editProviderId
+          ? t("SSO provider updated")
+          : t("SSO provider created"),
+      });
+      closeModal();
       form.reset();
+      setEditProviderId(null);
     },
     onError: (error: any) => {
       notifications.show({
-        message: error?.response?.data?.message ?? t("Failed to create provider"),
+        message: error?.response?.data?.message ?? t("Failed to save provider"),
         color: "red",
       });
     },
@@ -107,13 +119,31 @@ export default function SecuritySettings() {
     initialValues: INITIAL_VALUES,
   });
 
+  const handleOpenAdd = () => {
+    setEditProviderId(null);
+    form.reset();
+    openModal();
+  };
+
+  const handleOpenEdit = (provider: any) => {
+    setEditProviderId(provider.id);
+    form.setValues({
+      name: provider.name,
+      type: provider.type,
+      oidcIssuer: provider.oidcIssuer ?? "",
+      oidcClientId: provider.oidcClientId ?? "",
+      oidcClientSecret: "",
+      allowSignup: provider.allowSignup ?? true,
+      isEnabled: provider.isEnabled ?? true,
+    });
+    openModal();
+  };
+
   const handleSubmit = form.onSubmit((values) => {
-    createMutation.mutate(values);
+    saveMutation.mutate(values);
   });
 
-  const editingProvider = editProviderId
-    ? providers.find((provider) => provider.id === editProviderId)
-    : null;
+  const isEditing = !!editProviderId;
 
   if (!isAdmin) {
     return (
@@ -136,7 +166,7 @@ export default function SecuritySettings() {
               {t("Configure OpenID Connect providers for single sign-on.")}
             </Text>
           </Box>
-          <Button onClick={openCreate} disabled={!isAdmin}>
+          <Button onClick={handleOpenAdd} disabled={!isAdmin}>
             {t("Add Provider")}
           </Button>
         </Group>
@@ -172,6 +202,13 @@ export default function SecuritySettings() {
                   </Text>
                 </Box>
                 <Group gap="xs">
+                  <ActionIcon
+                    variant="subtle"
+                    color="blue"
+                    onClick={() => handleOpenEdit(provider)}
+                  >
+                    <IconEdit size={16} />
+                  </ActionIcon>
                   <ActionIcon
                     variant="subtle"
                     color="red"
@@ -215,9 +252,9 @@ export default function SecuritySettings() {
       </Paper>
 
       <Modal
-        opened={createOpened}
-        onClose={closeCreate}
-        title={t("Add SSO Provider")}
+        opened={modalOpened}
+        onClose={closeModal}
+        title={isEditing ? t("Edit SSO Provider") : t("Add SSO Provider")}
         size="lg"
       >
         <form onSubmit={handleSubmit}>
@@ -250,7 +287,8 @@ export default function SecuritySettings() {
             />
             <PasswordInput
               label={t("Client Secret")}
-              required
+              required={!isEditing}
+              description={isEditing ? t("Leave blank to keep the current secret") : undefined}
               {...form.getInputProps("oidcClientSecret")}
             />
             <Switch
@@ -262,11 +300,11 @@ export default function SecuritySettings() {
               {...form.getInputProps("isEnabled", { type: "checkbox" })}
             />
             <Group justify="flex-end">
-              <Button variant="default" onClick={closeCreate}>
+              <Button variant="default" onClick={closeModal}>
                 {t("Cancel")}
               </Button>
-              <Button type="submit" loading={createMutation.isPending}>
-                {t("Add Provider")}
+              <Button type="submit" loading={saveMutation.isPending}>
+                {isEditing ? t("Save Changes") : t("Add Provider")}
               </Button>
             </Group>
           </Stack>
