@@ -53,11 +53,16 @@ export class EnvironmentService {
     return parseInt(this.configService.get<string>('DATABASE_MAX_POOL', '10'));
   }
 
+  /**
+   * Whether Redis is configured and available.
+   * When false, all subsystems use in-memory fallbacks for single-instance deployments.
+   */
+  isRedisEnabled(): boolean {
+    return !!this.configService.get<string>('REDIS_URL');
+  }
+
   getRedisUrl(): string {
-    return this.configService.get<string>(
-      'REDIS_URL',
-      'redis://localhost:6379',
-    );
+    return this.configService.get<string>('REDIS_URL', 'redis://localhost:6379');
   }
 
   getJwtTokenExpiresIn(): string {

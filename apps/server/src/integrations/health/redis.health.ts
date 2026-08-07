@@ -18,6 +18,12 @@ export class RedisHealthIndicator {
   async pingCheck(key: string): Promise<HealthIndicatorResult> {
     const indicator = this.healthIndicatorService.check(key);
 
+    // When Redis is not configured, report the service as disabled
+    // rather than attempting a connection that would always fail.
+    if (!this.environmentService.isRedisEnabled()) {
+      return indicator.down(`${key} is disabled (REDIS_URL not configured)`);
+    }
+
     try {
       const redis = new Redis(this.environmentService.getRedisUrl(), {
         maxRetriesPerRequest: 15,
@@ -26,8 +32,8 @@ export class RedisHealthIndicator {
       await redis.ping();
       redis.disconnect();
       return indicator.up();
-    } catch (e) {
-      this.logger.error(e);
+    } catch (connectionError) {
+      this.logger.error(connectionError);
       return indicator.down(`${key} is not available`);
     }
   }
