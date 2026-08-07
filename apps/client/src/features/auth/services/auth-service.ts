@@ -17,7 +17,9 @@ export async function login(data: ILogin): Promise<ILoginResponse> {
 }
 
 export async function logout(): Promise<void> {
-  await api.post<void>("/auth/logout");
+  await api.post<void>("/auth/logout", {}, {
+    headers: { "Content-Type": "application/json" },
+  });
 }
 
 export async function changePassword(
@@ -48,7 +50,9 @@ export async function verifyUserToken(data: IVerifyUserToken): Promise<any> {
 }
 
 export async function getCollabToken(): Promise<ICollabToken> {
-  const req = await api.post<ICollabToken>("/auth/collab-token");
+  const req = await api.post<ICollabToken>("/auth/collab-token", {}, {
+    headers: { "Content-Type": "application/json" },
+  });
   return req.data;
 }
 

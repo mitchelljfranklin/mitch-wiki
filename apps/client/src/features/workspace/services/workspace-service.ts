@@ -119,6 +119,8 @@ export async function createWorkspace(
 }
 
 export async function getAppVersion(): Promise<IVersion> {
-  const req = await api.post("/version");
+  const req = await api.post("/version", {}, {
+    headers: { "Content-Type": "application/json" },
+  });
   return req.data;
 }

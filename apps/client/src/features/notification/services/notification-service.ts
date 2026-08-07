@@ -28,5 +28,7 @@ export async function markNotificationsRead(
 }
 
 export async function markAllNotificationsRead(): Promise<void> {
-  await api.post("/notifications/mark-all-read");
+  await api.post("/notifications/mark-all-read", {}, {
+    headers: { "Content-Type": "application/json" },
+  });
 }
