@@ -6,6 +6,7 @@ import { useState } from "react";
 import {
   Box,
   Button,
+  CopyButton,
   Group,
   Paper,
   Stack,
@@ -17,6 +18,7 @@ import {
   Modal,
   Select,
   Badge,
+  Code,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { useForm } from "@mantine/form";
@@ -200,6 +202,43 @@ export default function SecuritySettings() {
                   <Text size="xs" c="dimmed" mt={4}>
                     {provider.oidcIssuer}
                   </Text>
+                  <Group gap="xs" mt={4} align="center">
+                    <Text size="xs" c="dimmed">
+                      {t("Redirect URI")}:
+                    </Text>
+                    <Code style={{ fontSize: "11px" }}>
+                      {window.location.origin}/api/sso/oidc/{provider.id}/callback
+                    </Code>
+                    <CopyButton
+                      value={`${window.location.origin}/api/sso/oidc/${provider.id}/callback`}
+                    >
+                      {({ copied, copy }) => (
+                        <ActionIcon
+                          variant="subtle"
+                          size="sm"
+                          color={copied ? "green" : "gray"}
+                          onClick={copy}
+                        >
+                          {copied ? (
+                            <Text size="xs" c="green">{t("Copied")}</Text>
+                          ) : (
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="14"
+                              height="14"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                            >
+                              <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                            </svg>
+                          )}
+                        </ActionIcon>
+                      )}
+                    </CopyButton>
+                  </Group>
                 </Box>
                 <Group gap="xs">
                   <ActionIcon
