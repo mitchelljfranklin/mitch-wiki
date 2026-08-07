@@ -49,13 +49,15 @@ export class AuthProvidersRepo {
 
   async findByWorkspaceId(
     workspaceId: string,
-  ): Promise<Pick<AuthProvider, 'id' | 'name' | 'type' | 'isEnabled' | 'allowSignup' | 'createdAt' | 'updatedAt'>[]> {
+  ): Promise<Pick<AuthProvider, 'id' | 'name' | 'type' | 'oidcIssuer' | 'oidcClientId' | 'isEnabled' | 'allowSignup' | 'createdAt' | 'updatedAt'>[]> {
     return this.database
       .selectFrom('authProviders')
       .select([
         'id',
         'name',
         'type',
+        'oidcIssuer',
+        'oidcClientId',
         'isEnabled',
         'allowSignup',
         'createdAt',
