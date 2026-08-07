@@ -39,6 +39,13 @@ const sidebar = [
     ],
   },
   {
+    text: "API Reference",
+    collapsed: true,
+    items: [
+      { text: "Overview & Endpoints", link: "/api-reference/overview" },
+    ],
+  },
+  {
     text: "FAQ",
     link: "/faq",
   },
