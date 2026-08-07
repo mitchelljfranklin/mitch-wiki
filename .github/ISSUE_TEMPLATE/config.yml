@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation
+    url: https://wiki.mitchforge.com
+    about: Read the docs — installation, configuration, and user guides.
+  - name: GitHub Discussions
+    url: https://github.com/mitchelljfranklin/mitch-wiki/discussions
+    about: Ask questions, share ideas, and discuss with the community.
+  - name: Report a Security Vulnerability
+    url: https://github.com/mitchelljfranklin/mitch-wiki/security/advisories/new
+    about: Disclose security issues privately via GitHub's advisory system.
