@@ -40,6 +40,7 @@ import {
   IAuditService,
 } from '../../../integrations/audit/audit.service';
 import { EnvironmentService } from '../../../integrations/environment/environment.service';
+import { WorkspaceRepo } from '@docmost/db/repos/workspace/workspace.repo';
 
 @Injectable()
 export class AuthService {
@@ -53,11 +54,20 @@ export class AuthService {
     private mailService: MailService,
     private domainService: DomainService,
     private environmentService: EnvironmentService,
+    private workspaceRepo: WorkspaceRepo,
     @InjectKysely() private readonly db: KyselyDB,
     @Inject(AUDIT_SERVICE) private readonly auditService: IAuditService,
   ) {}
 
   async login(loginDto: LoginDto, workspaceId: string) {
+    const workspace = await this.workspaceRepo.findById(workspaceId);
+
+    if (workspace?.enforceSso) {
+      throw new UnauthorizedException(
+        'This workspace requires SSO authentication. Please use the SSO login button.',
+      );
+    }
+
     const user = await this.userRepo.findByEmail(loginDto.email, workspaceId, {
       includePassword: true,
     });

@@ -119,10 +119,11 @@ async function bootstrap() {
         '/api/billing/stripe/webhook',
         '/api/workspace/public',
         '/api/workspace/check-hostname',
-        '/api/sso/google',
         '/api/workspace/create',
         '/api/workspace/joined',
         '/api/workspace/find-by-email',
+        '/api/sso/oidc/',
+        '/api/sso/google',
       ];
 
       if (
