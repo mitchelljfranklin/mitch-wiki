@@ -14,7 +14,7 @@ The weekly `Upstream Drift` workflow (`.github/workflows/upstream-drift.yml`) op
 | Latest upstream | `v0.97.0` |
 | Fork history | grafted root commit whose parent is upstream `v0.95.0`; see the bootstrap below |
 
-Upstream v0.96–v0.97 added integrations (GitHub, GitLab, Jira, Linear, Figma, Azure DevOps, Slack), WebSocket improvements, trusted-proxy handling, MCP v2, editor fixes, and dependency updates. That merge is done; later weekly syncs are much smaller.
+Upstream v0.96–v0.97 added the integrations framework (provider registry, OAuth install/connect flows, link unfurling) with GitHub, Linear, and Figma providers, trusted-proxy client-IP handling, WebSocket improvements, static-asset caching, editor fixes, and dependency updates. The enterprise-only providers (GitLab, Jira, Azure DevOps, Slack) stay out with the rest of the EE tree. That merge is done; later weekly syncs are much smaller.
 
 ## Bootstrap fork history (one-time)
 
@@ -129,4 +129,4 @@ Then restore the community replacements if the merge overwrote them:
 | Upstream base | Merged on | Notes |
 |---|---|---|
 | `v0.95.0` | 2026-10-26 | Initial fork base; dependency/toolchain bumps (Tiptap 3.29.2, Hocuspocus 4.4.0, pnpm 11, Node 26) |
-| `v0.97.0` | 2026-10-26 | 116 commits. Took upstream Tiptap 3.31.3 / Hocuspocus 4.5.0 / axios 1.20.0 / nx 23.3 / pnpm 11.28.2 and its new integrations + static-asset caching; re-stripped all EE code (AI chat/search, templates, bases, MFA, audit/SIEM, API keys, license/billing, page verification, personal spaces, pdf-render, Typesense) and deleted the dead SIEM email templates; kept the Redis-optional seams, community SSO, collab socket rewrite, and favicon injection. Standardized page titles on upstream `DocumentTitle` (dropped the fork `usePageTitle` hook) and rebranded every "Docmost" string in client source and translations to "Mitch-Wiki". |
+| `v0.97.0` | 2026-10-26 | 116 commits. Took upstream Tiptap 3.31.3 / Hocuspocus 4.5.0 / axios 1.20.0 / nx 23.3 / pnpm 11.28.2, its integration framework (GitHub/Linear/Figma providers) and static-asset caching; re-stripped all EE code (AI chat/search, templates, bases, MFA, audit/SIEM, API keys, license/billing, page verification, personal spaces, pdf-render, Typesense) and deleted the dead SIEM email templates; kept the Redis-optional seams, community SSO, collab socket rewrite, and favicon injection. Standardized page titles on upstream `DocumentTitle` (dropped the fork `usePageTitle` hook) and rebranded every "Docmost" string in client source and translations to "Mitch-Wiki". |
