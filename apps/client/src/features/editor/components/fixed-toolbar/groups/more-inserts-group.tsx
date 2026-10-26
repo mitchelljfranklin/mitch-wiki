@@ -32,9 +32,9 @@ import {
 } from "@/components/icons";
 import { useTranslation } from "react-i18next";
 import { insertBaseEmbedBlock } from "@/features/editor/components/base-embed/insert-base-embed";
-import { useHasFeature } from "@/ee/hooks/use-feature";
-import { Feature } from "@/ee/features";
-import { useUpgradeLabel } from "@/ee/hooks/use-upgrade-label";
+import { useHasFeature } from "@/features/feature-flags/use-feature";
+import { Feature } from "@/features/feature-flags/features";
+import { useUpgradeLabel } from "@/features/feature-flags/use-upgrade-label";
 
 interface Props {
   editor: Editor;

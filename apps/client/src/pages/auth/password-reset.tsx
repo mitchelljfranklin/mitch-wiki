@@ -4,7 +4,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { useVerifyUserTokenQuery } from "@/features/auth/queries/auth-query";
 import { Button, Container, Group, Text } from "@mantine/core";
 import APP_ROUTE from "@/lib/app-route";
-import { getAppName } from "@/lib/config.ts";
+import { usePageTitle } from "@/hooks/use-page-title";
 import { useTranslation } from "react-i18next";
 
 export default function PasswordReset() {
@@ -25,7 +25,7 @@ export default function PasswordReset() {
       <>
         <Helmet>
           <title>
-            {t("Password Reset")} - {getAppName()}
+            {usePageTitle(t("Password Reset"))}
           </title>
         </Helmet>
         <Container my={40}>
@@ -51,7 +51,7 @@ export default function PasswordReset() {
     <>
       <Helmet>
         <title>
-          {t("Password Reset")} - {getAppName()}
+          {usePageTitle(t("Password Reset"))}
         </title>
       </Helmet>
       <PasswordResetForm resetToken={resetToken} />

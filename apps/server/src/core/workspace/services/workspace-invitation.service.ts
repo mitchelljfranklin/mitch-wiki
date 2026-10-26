@@ -32,10 +32,7 @@ import { InjectQueue } from '@nestjs/bullmq';
 import { QueueJob, QueueName } from '../../../integrations/queue/constants';
 import { Queue } from 'bullmq';
 import { EnvironmentService } from '../../../integrations/environment/environment.service';
-import {
-  validateAllowedEmail,
-  validateSsoEnforcement,
-} from '../../auth/auth.util';
+import { validateAllowedEmail } from '../../auth/auth.util';
 import { AuditEvent, AuditResource } from '../../../common/events/audit-events';
 import {
   AUDIT_SERVICE,
@@ -195,6 +192,7 @@ export class WorkspaceInvitationService {
           invitation.email,
           invitation.token,
           authUser.name,
+          workspace.name,
           workspace.hostname,
         );
       });
@@ -242,7 +240,6 @@ export class WorkspaceInvitationService {
       throw new BadRequestException('Invalid invitation token');
     }
 
-    validateSsoEnforcement(workspace);
     validateAllowedEmail(invitation.email, workspace);
 
     let newUser: User;
@@ -324,11 +321,12 @@ export class WorkspaceInvitationService {
       const emailTemplate = InvitationAcceptedEmail({
         invitedUserName: newUser.name,
         invitedUserEmail: newUser.email,
+        workspaceName: workspace.name,
       });
 
       await this.mailService.sendToQueue({
         to: invitedByUser.email,
-        subject: `${newUser.name} has accepted your Docmost invite`,
+        subject: `${newUser.name} has accepted your ${workspace.name} invite`,
         template: emailTemplate,
       });
     }
@@ -391,6 +389,7 @@ export class WorkspaceInvitationService {
       invitation.email,
       invitation.token,
       invitedByUser.name,
+      workspace.name,
       workspace.hostname,
     );
 
@@ -463,6 +462,7 @@ export class WorkspaceInvitationService {
     inviteeEmail: string,
     inviteToken: string,
     invitedByName: string,
+    workspaceName: string,
     hostname?: string,
   ): Promise<void> {
     const inviteLink = await this.buildInviteLink({
@@ -473,11 +473,12 @@ export class WorkspaceInvitationService {
 
     const emailTemplate = InvitationEmail({
       inviteLink,
+      workspaceName,
     });
 
     await this.mailService.sendToQueue({
       to: inviteeEmail,
-      subject: `${invitedByName} invited you to Docmost`,
+      subject: `${invitedByName} invited you to ${workspaceName}`,
       template: emailTemplate,
     });
   }

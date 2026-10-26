@@ -33,33 +33,7 @@ export class AttachmentProcessor extends WorkerHost implements OnModuleDestroy {
           job.data.aiChatId,
         );
       }
-      if (
-        job.name === QueueJob.ATTACHMENT_INDEX_CONTENT ||
-        job.name === QueueJob.ATTACHMENT_INDEXING
-      ) {
-        let AttachmentEeModule: any;
-        try {
-          // eslint-disable-next-line @typescript-eslint/no-require-imports
-          AttachmentEeModule = require('./../../../ee/attachments-ee/attachment-ee.service');
-        } catch (err) {
-          this.logger.debug(
-            'Attachment enterprise module requested but EE module not bundled in this build',
-          );
-          return;
-        }
-        const attachmentEeService = this.moduleRef.get(
-          AttachmentEeModule.AttachmentEeService,
-          { strict: false },
-        );
 
-        if (job.name === QueueJob.ATTACHMENT_INDEX_CONTENT) {
-          await attachmentEeService.indexAttachment(job.data.attachmentId);
-        } else if (job.name === QueueJob.ATTACHMENT_INDEXING) {
-          await attachmentEeService.indexAttachments(
-            job.data.workspaceId,
-          );
-        }
-      }
     } catch (err) {
       throw err;
     }

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional, Logger } from '@nestjs/common';
 import { RedisService } from '@nestjs-labs/nestjs-ioredis';
 import type { Redis } from 'ioredis';
 
@@ -9,13 +9,22 @@ const MAX_IMMEDIATE_EMAILS = 4;
 
 @Injectable()
 export class PageUpdateEmailRateLimiter {
-  private readonly redis: Redis;
+  private readonly redis: Redis | null = null;
 
-  constructor(private readonly redisService: RedisService) {
-    this.redis = this.redisService.getOrThrow();
+  constructor(@Optional() private readonly redisService: RedisService) {
+    if (this.redisService) {
+      this.redis = this.redisService.getOrThrow();
+    }
+  }
+
+  private hasRedis(): boolean {
+    return this.redis !== null;
   }
 
   async canSendEmail(userId: string): Promise<boolean> {
+    if (!this.hasRedis()) {
+      return true;
+    }
     const key = KEY_PREFIX + userId;
     const count = await this.redis.incr(key);
     await this.redis.expire(key, TTL_SECONDS, 'NX');
@@ -23,6 +32,9 @@ export class PageUpdateEmailRateLimiter {
   }
 
   async addToDigest(userId: string, notificationId: string): Promise<boolean> {
+    if (!this.hasRedis()) {
+      return true;
+    }
     const key = DIGEST_PREFIX + userId;
     const len = await this.redis.rpush(key, notificationId);
     await this.redis.expire(key, TTL_SECONDS);
@@ -30,6 +42,9 @@ export class PageUpdateEmailRateLimiter {
   }
 
   async popDigest(userId: string): Promise<string[]> {
+    if (!this.hasRedis()) {
+      return [];
+    }
     const key = DIGEST_PREFIX + userId;
     const [ids] = await this.redis
       .multi()
@@ -39,5 +54,4 @@ export class PageUpdateEmailRateLimiter {
 
     return (ids?.[1] as string[]) ?? [];
   }
-
 }

@@ -37,7 +37,7 @@ export default function AppVersion() {
           disabled={!hasUpdate}
           onClick={() => {
             window.open(
-              "https://github.com/docmost/docmost/releases",
+              "https://github.com/home/mitch-wiki/releases",
               "_blank",
             );
           }}

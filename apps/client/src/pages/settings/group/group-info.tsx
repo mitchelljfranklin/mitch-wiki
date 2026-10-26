@@ -1,7 +1,7 @@
 import SettingsTitle from "@/components/settings/settings-title.tsx";
 import GroupMembersList from "@/features/group/components/group-members";
 import GroupDetails from "@/features/group/components/group-details";
-import { getAppName } from "@/lib/config.ts";
+import { usePageTitle } from "@/hooks/use-page-title";
 import { Helmet } from "react-helmet-async";
 import { useTranslation } from "react-i18next";
 
@@ -12,7 +12,7 @@ export default function GroupInfo() {
     <>
       <Helmet>
         <title>
-          {t("Manage Group")} - {getAppName()}
+          {usePageTitle(t("Manage Group"))}
         </title>
       </Helmet>
       <SettingsTitle title={t("Manage Group")} />

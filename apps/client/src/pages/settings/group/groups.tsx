@@ -3,7 +3,7 @@ import SettingsTitle from "@/components/settings/settings-title.tsx";
 import { Group } from "@mantine/core";
 import CreateGroupModal from "@/features/group/components/create-group-modal";
 import useUserRole from "@/hooks/use-user-role.tsx";
-import {getAppName} from "@/lib/config.ts";
+import {usePageTitle} from "@/hooks/use-page-title";
 import {Helmet} from "react-helmet-async";
 import { useTranslation } from "react-i18next";
 
@@ -14,7 +14,7 @@ export default function Groups() {
   return (
     <>
         <Helmet>
-            <title>{t("Groups")} - {getAppName()}</title>
+            <title>{usePageTitle(t("Groups"))}</title>
         </Helmet>
       <SettingsTitle title={t("Groups")} />
 

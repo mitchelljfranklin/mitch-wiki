@@ -18,9 +18,9 @@ import { ExportFormat } from "@/features/page/types/page.types.ts";
 import { notifications } from "@mantine/notifications";
 import { exportSpace } from "@/features/space/services/space-service";
 import { useTranslation } from "react-i18next";
-import { Feature } from "@/ee/features";
-import { useHasFeature } from "@/ee/hooks/use-feature";
-import { useUpgradeLabel } from "@/ee/hooks/use-upgrade-label";
+import { Feature } from "@/features/feature-flags/features";
+import { useHasFeature } from "@/features/feature-flags/use-feature";
+import { useUpgradeLabel } from "@/features/feature-flags/use-upgrade-label";
 
 interface ExportModalProps {
   id: string;

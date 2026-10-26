@@ -24,6 +24,7 @@ export class EnvironmentVariables {
   )
   DATABASE_URL: string;
 
+  @IsOptional()
   @IsNotEmpty()
   @IsUrl(
     {
@@ -33,7 +34,7 @@ export class EnvironmentVariables {
     },
     { message: 'REDIS_URL must be a valid redis connection string' },
   )
-  REDIS_URL: string;
+  REDIS_URL?: string;
 
   @IsOptional()
   @IsUrl({ protocols: ['http', 'https'], require_tld: false })
@@ -56,20 +57,6 @@ export class EnvironmentVariables {
   @ValidateIf((obj) => obj.COLLAB_URL != '' && obj.COLLAB_URL != null)
   @IsUrl({ protocols: ['http', 'https'], require_tld: false })
   COLLAB_URL: string;
-
-  @IsOptional()
-  CLOUD: boolean;
-
-  @IsOptional()
-  @IsUrl(
-    { protocols: [], require_tld: true },
-    {
-      message:
-        'SUBDOMAIN_HOST must be a valid FQDN domain without the http protocol. e.g example.com',
-    },
-  )
-  @ValidateIf((obj) => obj.CLOUD === 'true'.toLowerCase())
-  SUBDOMAIN_HOST: string;
 
   @IsOptional()
   @IsIn(['database', 'typesense'])

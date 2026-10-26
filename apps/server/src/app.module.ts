@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { EnvironmentService } from './integrations/environment/environment.service';
 import { AuditActorInterceptor } from './common/interceptors/audit-actor.interceptor';
 import { CoreModule } from './core/core.module';
@@ -25,22 +24,11 @@ import { CacheModule } from '@nestjs/cache-manager';
 import KeyvRedis from '@keyv/redis';
 import { LoggerModule } from './common/logger/logger.module';
 import { ClsModule } from 'nestjs-cls';
-import { NoopAuditModule } from './integrations/audit/audit.module';
 import { ThrottleModule } from './integrations/throttle/throttle.module';
+import { NoopAuditModule } from './integrations/audit/audit.module';
+import { PERMISSION_CACHE_TTL_MS } from './common/helpers/cache-keys';
 
-const enterpriseModules = [];
-try {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  if (require('./ee/ee.module')?.EeModule) {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    enterpriseModules.push(require('./ee/ee.module')?.EeModule);
-  }
-} catch (err) {
-  if (process.env.CLOUD === 'true') {
-    console.warn('Failed to load enterprise modules. Exiting program.\n', err);
-    process.exit(1);
-  }
-}
+const redisIsEnabled = !!process.env.REDIS_URL;
 
 @Module({
   imports: [
@@ -49,28 +37,41 @@ try {
       middleware: { mount: true },
     }),
     LoggerModule,
-    NoopAuditModule,
     CoreModule,
     DatabaseModule,
     EnvironmentModule,
-    RedisModule.forRootAsync({
-      useClass: RedisConfigService,
-    }),
+    // Only connect to Redis when REDIS_URL is configured.
+    // When disabled, all subsystems fall back to in-memory alternatives.
+    ...(redisIsEnabled
+      ? [
+          RedisModule.forRootAsync({
+            useClass: RedisConfigService,
+          }),
+        ]
+      : []),
     CacheModule.registerAsync({
       isGlobal: true,
       useFactory: async (environmentService: EnvironmentService) => {
-        const redisUrl = environmentService.getRedisUrl();
+        // When Redis is enabled, use KeyvRedis as the cache store for
+        // shared cache across multiple app instances.
+        // When disabled, fall back to an in-memory LRU cache.
+        if (environmentService.isRedisEnabled()) {
+          const redisUrl = environmentService.getRedisUrl();
+          return {
+            ttl: PERMISSION_CACHE_TTL_MS,
+            stores: [new KeyvRedis(redisUrl)],
+          };
+        }
 
         return {
-          ttl: 5 * 1000,
-          stores: [new KeyvRedis(redisUrl)],
+          ttl: PERMISSION_CACHE_TTL_MS,
         };
       },
       inject: [EnvironmentService],
     }),
     CollaborationModule,
     WsModule,
-    QueueModule,
+    QueueModule.forRoot(),
     StaticModule,
     HealthModule,
     ImportModule,
@@ -85,11 +86,10 @@ try {
     SecurityModule,
     TelemetryModule,
     ThrottleModule,
-    ...enterpriseModules,
+    NoopAuditModule,
   ],
   controllers: [AppController],
   providers: [
-    AppService,
     {
       provide: APP_INTERCEPTOR,
       useClass: AuditActorInterceptor,

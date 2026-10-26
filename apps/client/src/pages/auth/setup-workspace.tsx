@@ -4,7 +4,7 @@ import { Helmet } from "react-helmet-async";
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import APP_ROUTE from "@/lib/app-route.ts";
-import { getAppName } from "@/lib/config.ts";
+import { usePageTitle } from "@/hooks/use-page-title";
 import { useTranslation } from "react-i18next";
 
 export default function SetupWorkspace() {
@@ -13,10 +13,10 @@ export default function SetupWorkspace() {
     data: workspace,
     isLoading,
     isError,
-    error,
   } = useWorkspacePublicDataQuery();
 
   const navigate = useNavigate();
+  const title = usePageTitle(t("Setup Workspace"));
 
   useEffect(() => {
     if (!isLoading && workspace) {
@@ -28,17 +28,15 @@ export default function SetupWorkspace() {
     return <div></div>;
   }
 
-  if (
-    isError &&
-    error?.["response"]?.status === 404 &&
-    error?.["response"]?.data.message.includes("Workspace not found")
-  ) {
+  if (isError) {
+    return null;
+  }
+
+  if (!workspace) {
     return (
       <>
         <Helmet>
-          <title>
-            {t("Setup Workspace")} - {getAppName()}
-          </title>
+          <title>{title}</title>
         </Helmet>
         <SetupWorkspaceForm />
       </>

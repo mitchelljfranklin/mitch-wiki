@@ -145,6 +145,7 @@ export class AttachmentService {
     type:
       | AttachmentType.Avatar
       | AttachmentType.WorkspaceIcon
+      | AttachmentType.WorkspaceFavicon
       | AttachmentType.SpaceIcon,
     userId: string,
     workspaceId: string,
@@ -195,6 +196,27 @@ export class AttachmentService {
 
           await this.workspaceRepo.updateWorkspace(
             { logo: preparedFile.fileName },
+            workspaceId,
+            trx,
+          );
+        } else if (type === AttachmentType.WorkspaceFavicon) {
+          const workspace = await this.workspaceRepo.findById(workspaceId, {
+            trx,
+          });
+
+          const settings = (workspace.settings ?? {}) as Record<string, any>;
+          oldFileName = settings?.branding?.favicon;
+
+          await this.workspaceRepo.updateWorkspace(
+            {
+              settings: {
+                ...settings,
+                branding: {
+                  ...settings?.branding,
+                  favicon: preparedFile.fileName,
+                },
+              },
+            },
             workspaceId,
             trx,
           );
@@ -460,5 +482,28 @@ export class AttachmentService {
     }
 
     await this.workspaceRepo.updateWorkspace({ logo: null }, workspace.id);
+  }
+
+  async removeWorkspaceFavicon(workspace: Workspace) {
+    const settings = (workspace.settings ?? {}) as Record<string, any>;
+    const favicon = settings?.branding?.favicon;
+
+    if (favicon && !favicon.toLowerCase().startsWith('http')) {
+      const filePath = `${getAttachmentFolderPath(AttachmentType.WorkspaceFavicon, workspace.id)}/${favicon}`;
+      await this.deleteRedundantFile(filePath);
+    }
+
+    await this.workspaceRepo.updateWorkspace(
+      {
+        settings: {
+          ...settings,
+          branding: {
+            ...settings?.branding,
+            favicon: null,
+          },
+        },
+      },
+      workspace.id,
+    );
   }
 }

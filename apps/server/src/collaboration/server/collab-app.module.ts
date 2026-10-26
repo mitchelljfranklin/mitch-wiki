@@ -15,6 +15,9 @@ import { RedisConfigService } from '../../integrations/redis/redis-config.servic
 import { CaslModule } from '../../core/casl/casl.module';
 import { CacheModule } from '@nestjs/cache-manager';
 import KeyvRedis from '@keyv/redis';
+import { PERMISSION_CACHE_TTL_MS } from '../../common/helpers/cache-keys';
+
+const collabRedisIsEnabled = !!process.env.REDIS_URL;
 
 @Module({
   imports: [
@@ -26,17 +29,31 @@ import KeyvRedis from '@keyv/redis';
     QueueModule,
     HealthModule,
     EventEmitterModule.forRoot(),
-    RedisModule.forRootAsync({
-      useClass: RedisConfigService,
-    }),
+    // Only connect to Redis when REDIS_URL is configured.
+    // When disabled, the collaboration server uses in-memory fallbacks.
+    ...(collabRedisIsEnabled
+      ? [
+          RedisModule.forRootAsync({
+            useClass: RedisConfigService,
+          }),
+        ]
+      : []),
     CacheModule.registerAsync({
       isGlobal: true,
       useFactory: async (environmentService: EnvironmentService) => {
-        const redisUrl = environmentService.getRedisUrl();
+        // When Redis is enabled, use KeyvRedis as the cache store.
+        // When disabled, fall back to an in-memory LRU cache for
+        // single-instance collaboration deployments.
+        if (environmentService.isRedisEnabled()) {
+          const redisUrl = environmentService.getRedisUrl();
+          return {
+            ttl: PERMISSION_CACHE_TTL_MS,
+            stores: [new KeyvRedis(redisUrl)],
+          };
+        }
 
         return {
-          ttl: 5 * 1000,
-          stores: [new KeyvRedis(redisUrl)],
+          ttl: PERMISSION_CACHE_TTL_MS,
         };
       },
       inject: [EnvironmentService],

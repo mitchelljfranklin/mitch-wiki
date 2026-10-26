@@ -4,12 +4,14 @@ import { join } from 'path';
 import * as fs from 'node:fs';
 import fastifyStatic from '@fastify/static';
 import { EnvironmentService } from '../environment/environment.service';
+import { WorkspaceRepo } from '@docmost/db/repos/workspace/workspace.repo';
 
 @Module({})
 export class StaticModule implements OnModuleInit {
   constructor(
     private readonly httpAdapterHost: HttpAdapterHost,
     private readonly environmentService: EnvironmentService,
+    private readonly workspaceRepo: WorkspaceRepo,
   ) {}
 
   public async onModuleInit() {
@@ -67,15 +69,48 @@ export class StaticModule implements OnModuleInit {
       await app.register(fastifyStatic, {
         root: clientDistPath,
         wildcard: false,
+        index: false,
       });
 
-      app.get(RENDER_PATH, (req: any, res: any) => {
-        const stream = fs.createReadStream(indexFilePath);
-        res
-          .header('Cache-Control', 'no-cache, no-store, must-revalidate')
-          .type('text/html')
-          .send(stream);
+      app.get(RENDER_PATH, async (req: any, res: any) => {
+        let html = fs.readFileSync(indexFilePath, 'utf8');
+
+        const workspace = await this.resolveWorkspace(req);
+
+        if (workspace) {
+          const settings = (workspace.settings ?? {}) as Record<string, any>;
+          const faviconFile = settings?.branding?.favicon;
+
+          if (faviconFile) {
+            const faviconUrl = `/api/attachments/img/workspace-favicon/${faviconFile}`;
+            html = html.replace(
+              /(<link[^>]*rel="icon"[^>]*href=")[^"]*/gi,
+              `$1${faviconUrl}`,
+            );
+          }
+        }
+
+        res.header('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.type('text/html').send(html);
       });
     }
+  }
+
+  private async resolveWorkspace(req: any) {
+    if (req.raw?.workspace) {
+      return req.raw.workspace;
+    }
+
+    if (this.environmentService.isSelfHosted()) {
+      return await this.workspaceRepo.findFirst();
+    }
+
+    const header = req.raw.headers.host;
+    if (header) {
+      const subdomain = header.split('.')[0];
+      return await this.workspaceRepo.findByHostname(subdomain);
+    }
+
+    return null;
   }
 }

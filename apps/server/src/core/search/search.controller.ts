@@ -113,29 +113,6 @@ export class SearchController {
       workspaceId: string;
     },
   ) {
-    const { userId, workspaceId } = opts;
-    let TypesenseModule: any;
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      TypesenseModule = require('./../../ee/typesense/services/page-search.service');
-
-      const PageSearchService = this.moduleRef.get(
-        TypesenseModule.PageSearchService,
-        {
-          strict: false,
-        },
-      );
-
-      return PageSearchService.searchPage(searchParams, {
-        userId: userId,
-        workspaceId,
-      });
-    } catch (err) {
-      this.logger.debug(
-        'Typesense module requested but enterprise module not bundled in this build',
-      );
-    }
-
-    throw new BadRequestException('Enterprise Typesense search module missing');
+    throw new BadRequestException('Typesense search is not available');
   }
 }

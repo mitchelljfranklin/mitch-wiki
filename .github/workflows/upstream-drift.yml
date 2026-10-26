@@ -1,0 +1,338 @@
+name: Upstream Drift
+
+on:
+  schedule:
+    - cron: "0 6 * * 1" # Mondays 06:00 UTC
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Upstream ref to compare against (tag or branch). Defaults to the latest stable tag."
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: upstream-drift
+  cancel-in-progress: false
+
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - name: Checkout fork
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Read sync state
+        id: state
+        run: |
+          echo "upstream=$(jq -r .upstream .github/upstream-sync.json)" >> "$GITHUB_OUTPUT"
+          echo "branch=$(jq -r .upstreamBranch .github/upstream-sync.json)" >> "$GITHUB_OUTPUT"
+          echo "base=$(jq -r .baseRef .github/upstream-sync.json)" >> "$GITHUB_OUTPUT"
+          echo "fork_branch=$(jq -r .forkBranch .github/upstream-sync.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Fetch upstream
+        env:
+          UPSTREAM: ${{ steps.state.outputs.upstream }}
+          UPSTREAM_BRANCH: ${{ steps.state.outputs.branch }}
+        run: |
+          git remote add upstream "https://github.com/${UPSTREAM}.git" 2>/dev/null || \
+            git remote set-url upstream "https://github.com/${UPSTREAM}.git"
+          git fetch upstream "${UPSTREAM_BRANCH}" --tags --force --prune
+
+      - name: Resolve target ref
+        id: target
+        env:
+          REQUESTED: ${{ inputs.target }}
+          UPSTREAM_BRANCH: ${{ steps.state.outputs.branch }}
+        run: |
+          if [ -n "${REQUESTED}" ]; then
+            TARGET="${REQUESTED}"
+            # A dispatch target may be a branch or tag not covered by the main fetch.
+            if ! git rev-parse --verify --quiet "${TARGET}^{commit}" >/dev/null; then
+              git fetch upstream "${TARGET}" --tags --force 2>/dev/null || true
+            fi
+          else
+            # Newest stable tag that is actually reachable from upstream's branch.
+            TARGET=$(git tag --merged "upstream/${UPSTREAM_BRANCH}" --list 'v*' --sort=-v:refname | head -n1)
+            if [ -z "${TARGET}" ]; then
+              TARGET="upstream/${UPSTREAM_BRANCH}"
+            fi
+          fi
+
+          if ! git rev-parse --verify --quiet "${TARGET}^{commit}" >/dev/null; then
+            echo "::error::Unknown upstream ref: ${TARGET}"
+            exit 1
+          fi
+
+          echo "target=${TARGET}" >> "$GITHUB_OUTPUT"
+          echo "target_sha=$(git rev-parse "${TARGET}^{commit}")" >> "$GITHUB_OUTPUT"
+
+      - name: Compute drift
+        env:
+          BASE: ${{ steps.state.outputs.base }}
+          TARGET: ${{ steps.target.outputs.target }}
+        run: |
+          set -uo pipefail
+
+          git rev-parse --verify --quiet "${BASE}^{commit}" >/dev/null || {
+            echo "::error::Base ref ${BASE} from .github/upstream-sync.json is missing"
+            exit 1
+          }
+
+          COUNT=$(git rev-list --count "${BASE}..${TARGET}")
+          DIFFSTAT=$(git diff --shortstat "${BASE}" "${TARGET}" | tr -d '\n' | sed 's/^ *//')
+          CHECKED_AT=$(date -u +'%Y-%m-%d %H:%M UTC')
+
+          git diff --name-only "${BASE}" "${TARGET}" > upstream-files.txt
+          git log --oneline --no-decorate "${BASE}..${TARGET}" | head -n 50 > commits.txt
+
+          # A merge base only exists after the one-time graft in FORK.md.
+          MERGE_BASE=$(git merge-base HEAD "${TARGET}" 2>/dev/null || true)
+          if [ -n "${MERGE_BASE}" ]; then HAS_MERGE_BASE=true; else HAS_MERGE_BASE=false; fi
+
+          # Files the fork changed relative to the shared base.
+          FORK_BASE="${MERGE_BASE:-$BASE}"
+          git diff --name-only "${FORK_BASE}" HEAD > fork-files.txt
+
+          # Files changed on both sides are the likely conflict hotspots.
+          # Enterprise paths are split out: the re-strip step deletes them, so they
+          # are expected noise rather than work a reviewer needs to plan for.
+          EE_PATH='^apps/(client|server)/src/ee(/|$)|^\.gitmodules$'
+          comm -12 <(sort -u upstream-files.txt) <(sort -u fork-files.txt) > overlap-all.txt || true
+          grep -Ev "${EE_PATH}" overlap-all.txt > overlap.txt || true
+          grep -E "${EE_PATH}" overlap-all.txt > overlap-ee.txt || true
+          OVERLAP_COUNT=$(wc -l < overlap.txt | tr -d ' ')
+          OVERLAP_EE_COUNT=$(wc -l < overlap-ee.txt | tr -d ' ')
+
+          # Upstream still ships the enterprise tree and its submodule definition.
+          EE_TOTAL=$(git ls-tree -r --name-only "${TARGET}" -- apps/client/src/ee apps/server/src/ee | wc -l | tr -d ' ')
+          if git cat-file -e "${TARGET}:.gitmodules" 2>/dev/null; then SUBMODULE=yes; else SUBMODULE=no; fi
+
+          # Security/auth/dependency-adjacent changes get reviewed first.
+          # EE paths are excluded; they are handled by the re-strip step instead.
+          grep -Ei '(^|/)(auth|security|crypto|session|password|sso|oidc|jwt|throttl|sanitiz|csrf)|package\.json$|pnpm-lock\.yaml$|Dockerfile$|^\.github/workflows/' upstream-files.txt \
+            | grep -v '/ee/' | head -n 40 > security-files.txt || true
+          SECURITY_COUNT=$(wc -l < security-files.txt | tr -d ' ')
+
+          # Conflict preview is only meaningful once the fork shares history.
+          CONFLICT_COUNT=0
+          CONFLICT_EE_COUNT=0
+          : > conflicts.txt
+          : > conflicts-ee.txt
+          if [ -n "${MERGE_BASE}" ]; then
+            # --name-only prints the merge tree OID, then one path per conflict,
+            # then a blank line and informational messages. Keep only the paths.
+            git merge-tree --write-tree --name-only HEAD "${TARGET}" > conflicts-raw.txt 2>/dev/null || true
+            tail -n +2 conflicts-raw.txt | awk 'NF==0 {exit} {print}' > conflicts-all.txt
+            grep -Ev "${EE_PATH}" conflicts-all.txt > conflicts-real.txt || true
+            grep -E "${EE_PATH}" conflicts-all.txt > conflicts-ee.txt || true
+            CONFLICT_COUNT=$(wc -l < conflicts-real.txt | tr -d ' ')
+            CONFLICT_EE_COUNT=$(wc -l < conflicts-ee.txt | tr -d ' ')
+            head -n 80 conflicts-real.txt > conflicts.txt
+          fi
+
+          git diff "${BASE}" "${TARGET}" -- package.json apps/client/package.json apps/server/package.json > manifest-diff.txt || true
+
+          {
+            echo "BASE=${BASE}"
+            echo "TARGET=${TARGET}"
+            echo "COUNT=${COUNT}"
+            echo "DIFFSTAT=${DIFFSTAT}"
+            echo "CHECKED_AT=${CHECKED_AT}"
+            echo "MERGE_BASE=${MERGE_BASE}"
+            echo "HAS_MERGE_BASE=${HAS_MERGE_BASE}"
+            echo "OVERLAP_COUNT=${OVERLAP_COUNT}"
+            echo "OVERLAP_EE_COUNT=${OVERLAP_EE_COUNT}"
+            echo "CONFLICT_COUNT=${CONFLICT_COUNT}"
+            echo "CONFLICT_EE_COUNT=${CONFLICT_EE_COUNT}"
+            echo "EE_TOTAL=${EE_TOTAL}"
+            echo "SUBMODULE=${SUBMODULE}"
+            echo "SECURITY_COUNT=${SECURITY_COUNT}"
+          } >> "$GITHUB_ENV"
+
+      - name: Build issue body
+        env:
+          UPSTREAM: ${{ steps.state.outputs.upstream }}
+          FORK_BRANCH: ${{ steps.state.outputs.fork_branch }}
+        run: |
+          {
+            echo "Upstream \`${UPSTREAM}\` has moved since the last recorded sync."
+            echo ""
+            echo "| | |"
+            echo "|---|---|"
+            echo "| Fork branch | \`${FORK_BRANCH}\` |"
+            echo "| Last synced base | \`${BASE}\` |"
+            echo "| Target | \`${TARGET}\` |"
+            echo "| New upstream commits | **${COUNT}** |"
+            echo "| Upstream diff | ${DIFFSTAT:-n/a} |"
+            echo "| Files changed on both sides | **${OVERLAP_COUNT}** (+${OVERLAP_EE_COUNT} enterprise) |"
+            if [ "${HAS_MERGE_BASE}" = "true" ]; then
+              echo "| Predicted conflicts | **${CONFLICT_COUNT}** (+${CONFLICT_EE_COUNT} enterprise to re-strip) |"
+            else
+              echo "| Predicted conflicts | unavailable — no merge base |"
+            fi
+            echo "| Enterprise files reintroduced | **${EE_TOTAL}** (submodule: ${SUBMODULE}) |"
+            echo "| Merge base with fork | \`${MERGE_BASE:-none}\` |"
+            echo "| Checked | ${CHECKED_AT} |"
+            echo ""
+            echo "Compare: https://github.com/${UPSTREAM}/compare/${BASE}...${TARGET}"
+            echo ""
+
+            if [ "${HAS_MERGE_BASE}" != "true" ]; then
+              echo "> [!WARNING]"
+              echo "> The fork does not share history with upstream, so conflicts cannot be predicted."
+              echo "> Run the one-time bootstrap in \`FORK.md\` before attempting the merge."
+              echo ""
+            fi
+
+            if [ "${EE_TOTAL}" -gt 0 ]; then
+              echo "> [!WARNING]"
+              echo "> This merge reintroduces ${EE_TOTAL} enterprise file(s) under \`apps/*/src/ee/\` and the \`.gitmodules\` submodule."
+              echo "> Re-strip them using the checklist in \`FORK.md\` before merging."
+              echo ""
+            fi
+
+            if [ "${SECURITY_COUNT}" -gt 0 ]; then
+              echo "### Security-sensitive changes"
+              echo ""
+              echo '```'
+              cat security-files.txt
+              echo '```'
+              echo ""
+            fi
+
+            if [ "${OVERLAP_COUNT}" -gt 0 ]; then
+              echo "<details><summary>Likely merge hotspots (${OVERLAP_COUNT})</summary>"
+              echo ""
+              echo '```'
+              head -n 60 overlap.txt
+              echo '```'
+              echo ""
+              echo "</details>"
+              echo ""
+            fi
+
+            if [ "${CONFLICT_COUNT}" -gt 0 ]; then
+              echo "<details><summary>Predicted conflicts (${CONFLICT_COUNT}; showing up to 80)</summary>"
+              echo ""
+              echo '```'
+              cat conflicts.txt
+              echo '```'
+              echo ""
+              echo "</details>"
+              echo ""
+            fi
+
+            if [ "${CONFLICT_EE_COUNT}" -gt 0 ]; then
+              echo "<details><summary>Enterprise modify/delete conflicts (${CONFLICT_EE_COUNT}; deleted by the re-strip step)</summary>"
+              echo ""
+              echo '```'
+              head -n 40 conflicts-ee.txt
+              echo '```'
+              echo ""
+              echo "</details>"
+              echo ""
+            fi
+
+            echo "<details><summary>Upstream commits (${COUNT}; showing up to 50)</summary>"
+            echo ""
+            echo '```'
+            cat commits.txt
+            echo '```'
+            echo ""
+            echo "</details>"
+            echo ""
+
+            if [ -s manifest-diff.txt ]; then
+              echo "<details><summary>Dependency manifest changes</summary>"
+              echo ""
+              echo '```diff'
+              head -n 120 manifest-diff.txt
+              echo '```'
+              echo ""
+              echo "</details>"
+              echo ""
+            fi
+
+            echo "### Review checklist"
+            echo ""
+            echo "- [ ] Read \`FORK.md\` and confirm the divergence manifest is current."
+            echo "- [ ] Merge on an \`upstream-sync/<version>\` branch, not directly on \`${FORK_BRANCH}\`."
+            echo "- [ ] Re-strip \`apps/*/src/ee\`, \`.gitmodules\`, and EE-only dependencies."
+            echo "- [ ] Keep the Redis-optional, community SSO, feature-gate, branding, and collab seams."
+            echo "- [ ] Run \`pnpm install\`, \`pnpm fork:check\`, builds, tests, and \`pnpm docs:build\`."
+            echo "- [ ] Update \`.github/upstream-sync.json\` and the history table in \`FORK.md\`."
+          } > body.md
+
+      - name: Ensure drift label exists
+        run: |
+          gh label create upstream-sync --color 0E8A16 \
+            --description "Upstream docmost/docmost has moved" 2>/dev/null \
+            && echo "label created" \
+            || echo "label already exists (or cannot be created)"
+
+      - name: Close resolved drift issue
+        if: env.COUNT == '0' && env.HAS_MERGE_BASE == 'true'
+        run: |
+          OLD=$(gh issue list --state open --search "Upstream drift in:title" --json number --jq '.[0].number // empty')
+          if [ -n "${OLD}" ]; then
+            gh issue close "${OLD}" --comment "Resolved — no upstream commits are pending against \`${BASE}\`."
+          else
+            echo "no open drift issue"
+          fi
+
+      - name: Close bootstrap issue after grafting
+        if: env.HAS_MERGE_BASE == 'true'
+        run: |
+          OLD=$(gh issue list --state open --search "Upstream sync bootstrap in:title" --json number --jq '.[0].number // empty')
+          if [ -n "${OLD}" ]; then
+            gh issue close "${OLD}" --comment "Resolved — the fork now shares history with upstream."
+          fi
+
+      - name: Open bootstrap issue when history is not grafted
+        if: env.COUNT == '0' && env.HAS_MERGE_BASE != 'true'
+        run: |
+          TITLE="Upstream sync bootstrap: fork history is not grafted"
+          OLD=$(gh issue list --state open --search "Upstream sync bootstrap in:title" --json number --jq '.[0].number // empty')
+          {
+            echo "The fork does not share a merge base with \`${UPSTREAM}\`, so upstream updates cannot be merged."
+            echo ""
+            echo "Run the one-time bootstrap in \`FORK.md\` (\`git commit-tree\` graft), then re-run this workflow."
+            echo ""
+            echo "Last checked: ${CHECKED_AT}"
+          } > bootstrap.md
+          if [ -n "${OLD}" ]; then
+            gh issue edit "${OLD}" --title "${TITLE}" --body-file bootstrap.md
+          else
+            gh issue create --title "${TITLE}" --body-file bootstrap.md --label upstream-sync
+          fi
+
+      - name: Create or refresh drift issue
+        if: env.COUNT != '0'
+        run: |
+          TITLE="Upstream drift: ${BASE} → ${TARGET} (${COUNT} commit(s))"
+          OLD=$(gh issue list --state open --search "Upstream drift in:title" --json number --jq '.[0].number // empty')
+          if [ -n "${OLD}" ]; then
+            gh issue edit "${OLD}" --title "${TITLE}" --body-file body.md
+          else
+            gh issue create --title "${TITLE}" --body-file body.md --label upstream-sync || \
+              gh issue create --title "${TITLE}" --body-file body.md
+          fi
+
+      - name: Diagnose token permissions (on failure)
+        if: failure()
+        run: |
+          echo "Token permissions as seen by the API:"
+          gh api "repos/${GITHUB_REPOSITORY}" --jq '.permissions' || true
+          echo ""
+          echo "If 'issues' is false above despite the workflow declaring issues:write,"
+          echo "check Settings → Actions → General → Workflow permissions and set it to"
+          echo "'Read and write permissions', then re-run this workflow."

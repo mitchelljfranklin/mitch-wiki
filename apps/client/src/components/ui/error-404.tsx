@@ -4,13 +4,15 @@ import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { useTranslation } from "react-i18next";
 
+import { usePageTitle } from "@/hooks/use-page-title";
+
 export function Error404() {
   const { t } = useTranslation();
 
   return (
     <>
       <Helmet>
-        <title>{t("404 page not found")} - Docmost</title>
+        <title>{usePageTitle(t("404 page not found"))}</title>
       </Helmet>
       <Container className={classes.root}>
         <Title className={classes.title}>{t("404 page not found")}</Title>

@@ -1,4 +1,37 @@
-import { IAuthProvider } from "@/ee/security/types/security.types.ts";
+export enum SSO_PROVIDER {
+  OIDC = 'oidc',
+  SAML = 'saml',
+  GOOGLE = 'google',
+  LDAP = 'ldap',
+}
+
+export interface IAuthProvider {
+  id: string;
+  name: string;
+  type: SSO_PROVIDER;
+  samlUrl: string;
+  samlCertificate: string;
+  oidcIssuer: string;
+  oidcClientId: string;
+  oidcClientSecret: string;
+  ldapUrl: string;
+  ldapBindDn: string;
+  ldapBindPassword: string;
+  ldapBaseDn: string;
+  ldapUserSearchFilter: string;
+  ldapUserAttributes: any;
+  ldapTlsEnabled: boolean;
+  ldapTlsCaCert: string;
+  allowSignup: boolean;
+  isEnabled: boolean;
+  groupSync: boolean;
+  creatorId: string;
+  workspaceId: string;
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt: Date;
+  providerId: string;
+}
 
 export interface IWorkspace {
   id: string;
@@ -40,6 +73,11 @@ export interface IWorkspaceSettings {
   templates?: IWorkspaceTemplateSettings;
   spaces?: IWorkspaceSpaceSettings;
   defaultPageEditMode?: string;
+  branding?: IWorkspaceBrandingSettings;
+}
+
+export interface IWorkspaceBrandingSettings {
+  favicon?: string | null;
 }
 
 export interface IWorkspaceApiSettings {

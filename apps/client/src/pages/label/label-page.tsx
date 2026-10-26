@@ -19,7 +19,7 @@ import { Link, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Helmet } from "react-helmet-async";
 import { useDebouncedValue } from "@mantine/hooks";
-import { getAppName } from "@/lib/config";
+import { usePageTitle } from "@/hooks/use-page-title";
 import { useLabelPagesQuery } from "@/features/label/queries/label-query.ts";
 import { useGetSpacesQuery } from "@/features/space/queries/space-query.ts";
 import { getLabelColor } from "@/features/label/utils/label-colors.ts";
@@ -84,7 +84,7 @@ export default function LabelPage() {
     <>
       <Helmet>
         <title>
-          {labelName} - {getAppName()}
+          {usePageTitle(labelName)}
         </title>
       </Helmet>
 

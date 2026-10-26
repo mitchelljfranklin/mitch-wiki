@@ -1,0 +1,24 @@
+:root {
+  --vp-c-brand-1: #2b7af1;
+  --vp-c-brand-2: #0b60d8;
+  --vp-c-brand-3: #004aac;
+  --vp-c-brand-soft: rgba(43, 122, 241, 0.14);
+}
+
+.dark {
+  --vp-c-brand-1: #3b82f6;
+  --vp-c-brand-2: #60a5fa;
+  --vp-c-brand-3: #93bbfd;
+  --vp-c-brand-soft: rgba(59, 130, 246, 0.16);
+}
+
+.VPHero .name {
+  background: linear-gradient(135deg, #2b7af1 0%, #7c3aed 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.VPHero .image {
+  max-width: 128px;
+}

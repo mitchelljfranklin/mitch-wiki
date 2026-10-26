@@ -22,7 +22,7 @@ import {
 import { useToggleSidebar } from "@/components/layouts/global/hooks/hooks/use-toggle-sidebar.ts";
 import SidebarToggle from "@/components/ui/sidebar-toggle-button.tsx";
 import { useTranslation } from "react-i18next";
-import useTrial from "@/ee/hooks/use-trial.tsx";
+import useTrial from "@/features/feature-flags/use-trial";
 import { isCloud } from "@/lib/config.ts";
 import {
   SearchControl,
@@ -34,6 +34,8 @@ import {
 } from "@/features/search/constants.ts";
 import { NotificationPopover } from "@/features/notification/components/notification-popover.tsx";
 import { workspaceAtom } from "@/features/user/atoms/current-user-atom.ts";
+import { getAvatarUrl } from "@/lib/config.ts";
+import { AvatarIconType } from "@/features/attachments/types/attachment.types.ts";
 
 const links = [
   { link: APP_ROUTE.HOME, label: "Home" },
@@ -53,6 +55,11 @@ export function AppHeader() {
   const aiChatEnabled = workspace?.settings?.ai?.chat === true;
 
   const isPageRoute = location.pathname.includes("/p/");
+
+  const workspaceName = workspace?.name ?? "Mitch-Wiki";
+  const workspaceLogo = workspace?.logo
+    ? getAvatarUrl(workspace.logo, AvatarIconType.WORKSPACE_ICON)
+    : "/icons/favicon-32x32.png";
 
   const items = links.map((link) => (
     <Link key={link.label} to={link.link} className={classes.link}>
@@ -84,11 +91,11 @@ export function AppHeader() {
             />
           </Tooltip>
 
-          <Link to="/home" className={classes.brand} aria-label="Docmost">
+          <Link to="/home" className={classes.brand} aria-label={workspaceName}>
             <Box hiddenFrom="sm" className={classes.brandIcon}>
               <img
-                src="/icons/favicon-32x32.png"
-                alt="Docmost"
+                src={workspaceLogo}
+                alt={workspaceName}
                 width={22}
                 height={22}
               />
@@ -99,7 +106,7 @@ export function AppHeader() {
               style={{ userSelect: "none" }}
               visibleFrom="sm"
             >
-              Docmost
+              {workspaceName}
             </Text>
           </Link>
 

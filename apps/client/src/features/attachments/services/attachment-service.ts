@@ -104,3 +104,11 @@ export async function removeSpaceIcon(spaceId: string): Promise<void> {
 export async function removeWorkspaceIcon(): Promise<void> {
   await removeIcon(AvatarIconType.WORKSPACE_ICON);
 }
+
+export async function uploadWorkspaceFavicon(file: File): Promise<IAttachment> {
+  return uploadIcon(file, AvatarIconType.WORKSPACE_FAVICON);
+}
+
+export async function removeWorkspaceFavicon(): Promise<void> {
+  await removeIcon(AvatarIconType.WORKSPACE_FAVICON);
+}

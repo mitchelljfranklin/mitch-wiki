@@ -12,16 +12,17 @@ import * as React from 'react';
 
 interface MailBodyProps {
   children: React.ReactNode;
+  workspaceName?: string;
 }
 
-export function MailBody({ children }: MailBodyProps) {
+export function MailBody({ children, workspaceName }: MailBodyProps) {
   return (
     <Html>
       <Head />
       <Body style={main}>
         <MailHeader />
         <Container style={container}>{children}</Container>
-        <MailFooter />
+        <MailFooter workspaceName={workspaceName} />
       </Body>
     </Html>
   );
@@ -76,12 +77,13 @@ export function EmailButton({ href, children }: EmailButtonProps) {
   );
 }
 
-export function MailFooter() {
+export function MailFooter({ workspaceName }: { workspaceName?: string }) {
+  const appName = workspaceName ?? "Mitch-Wiki";
   return (
     <Section style={footer}>
       <Row>
         <Text style={{ textAlign: 'center', color: '#706a7b' }}>
-          © {new Date().getFullYear()} Docmost, All Rights Reserved <br />
+          © {new Date().getFullYear()} {appName}, All Rights Reserved <br />
         </Text>
       </Row>
     </Section>

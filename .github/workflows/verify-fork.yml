@@ -1,0 +1,34 @@
+name: Verify Fork
+
+# Guards the fork's deliberate divergences (see FORK.md). scripts/fork-check.mjs
+# uses only Node built-ins, so this runs without installing dependencies and
+# catches an upstream merge that quietly reintroduced enterprise code or
+# dropped a fork seam.
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-fork-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fork-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 26
+
+      - name: Fork divergence check
+        run: node scripts/fork-check.mjs

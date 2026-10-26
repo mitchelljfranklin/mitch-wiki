@@ -30,7 +30,6 @@ import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { PasswordResetDto } from './dto/password-reset.dto';
 import { VerifyUserTokenDto } from './dto/verify-user-token.dto';
 import { FastifyReply, FastifyRequest } from 'fastify';
-import { validateSsoEnforcement } from './auth.util';
 import { ModuleRef } from '@nestjs/core';
 import { AuditEvent, AuditResource } from '../../common/events/audit-events';
 import {
@@ -59,46 +58,6 @@ export class AuthController {
     @Res({ passthrough: true }) res: FastifyReply,
     @Body() loginInput: LoginDto,
   ) {
-    validateSsoEnforcement(workspace);
-
-    let MfaModule: any;
-    let isMfaModuleReady = false;
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      MfaModule = require('./../../ee/mfa/services/mfa.service');
-      isMfaModuleReady = true;
-    } catch (err) {
-      this.logger.debug(
-        'MFA module requested but EE module not bundled in this build',
-      );
-      isMfaModuleReady = false;
-    }
-    if (isMfaModuleReady) {
-      const mfaService = this.moduleRef.get(MfaModule.MfaService, {
-        strict: false,
-      });
-
-      const mfaResult = await mfaService.checkMfaRequirements(
-        loginInput,
-        workspace,
-        res,
-      );
-
-      if (mfaResult) {
-        // If user has MFA enabled OR workspace enforces MFA, require MFA verification
-        if (mfaResult.userHasMfa || mfaResult.requiresMfaSetup) {
-          return {
-            userHasMfa: mfaResult.userHasMfa,
-            requiresMfaSetup: mfaResult.requiresMfaSetup,
-            isMfaEnforced: mfaResult.isMfaEnforced,
-          };
-        } else if (mfaResult.authToken) {
-          // User doesn't have MFA and workspace doesn't require it
-          this.setAuthCookie(res, mfaResult.authToken);
-          return;
-        }
-      }
-    }
 
     const authToken = await this.authService.login(loginInput, workspace.id);
     this.setAuthCookie(res, authToken);
@@ -143,7 +102,6 @@ export class AuthController {
     @Body() forgotPasswordDto: ForgotPasswordDto,
     @AuthWorkspace() workspace: Workspace,
   ) {
-    validateSsoEnforcement(workspace);
     return this.authService.forgotPassword(forgotPasswordDto, workspace);
   }
 

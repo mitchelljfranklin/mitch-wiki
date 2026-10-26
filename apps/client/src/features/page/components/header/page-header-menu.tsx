@@ -43,11 +43,6 @@ import { formattedDate } from "@/lib/time.ts";
 import { PageEditModeToggle } from "@/features/user/components/page-state-pref.tsx";
 import MovePageModal from "@/features/page/components/move-page-modal.tsx";
 import { useTimeAgo } from "@/hooks/use-time-ago.tsx";
-import { PageShareModal } from "@/ee/page-permission";
-import {
-  PageVerificationMenuItem,
-  PageVerificationModal,
-} from "@/ee/page-verification";
 import {
   useFavoriteIds,
   useAddFavoriteMutation,
@@ -103,8 +98,6 @@ export default function PageHeaderMenu({ readOnly }: PageHeaderMenuProps) {
 
       {!readOnly && !page?.isBase && <PageEditModeToggle size="xs" />}
 
-      <PageShareModal readOnly={readOnly} />
-
       <Tooltip label={t("Comments")} openDelay={250} withArrow>
         <ActionIcon
           variant="subtle"
@@ -152,10 +145,6 @@ function PageActionMenu({ readOnly }: PageActionMenuProps) {
   const [
     movePageModalOpened,
     { open: openMovePageModal, close: closeMoveSpaceModal },
-  ] = useDisclosure(false);
-  const [
-    verificationOpened,
-    { open: openVerificationModal, close: closeVerificationModal },
   ] = useDisclosure(false);
   const [pageEditor] = useAtom(pageEditorAtom);
   const pageUpdatedAt = useTimeAgo(page?.updatedAt);
@@ -293,13 +282,6 @@ function PageActionMenu({ readOnly }: PageActionMenuProps) {
             </Menu.Item>
           )}
 
-          {!readOnly && !page?.isBase && (
-            <PageVerificationMenuItem
-              pageId={page?.id}
-              onClick={openVerificationModal}
-            />
-          )}
-
           <Menu.Divider />
 
           {!readOnly && (
@@ -388,12 +370,6 @@ function PageActionMenu({ readOnly }: PageActionMenuProps) {
         currentSpaceSlug={spaceSlug}
         onClose={closeMoveSpaceModal}
         open={movePageModalOpened}
-      />
-
-      <PageVerificationModal
-        pageId={page.id}
-        opened={verificationOpened}
-        onClose={closeVerificationModal}
       />
     </>
   );

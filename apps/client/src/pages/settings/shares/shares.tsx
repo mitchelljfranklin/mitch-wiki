@@ -1,6 +1,6 @@
 import SettingsTitle from "@/components/settings/settings-title.tsx";
 import { Helmet } from "react-helmet-async";
-import { getAppName } from "@/lib/config.ts";
+import { usePageTitle } from "@/hooks/use-page-title";
 import { useTranslation } from "react-i18next";
 import ShareList from "@/features/share/components/share-list.tsx";
 import { Alert, Text } from "@mantine/core";
@@ -14,7 +14,7 @@ export default function Shares() {
     <>
       <Helmet>
         <title>
-          {t("Public sharing")} - {getAppName()}
+          {usePageTitle(t("Public sharing"))}
         </title>
       </Helmet>
       <SettingsTitle title={t("Public sharing")} />

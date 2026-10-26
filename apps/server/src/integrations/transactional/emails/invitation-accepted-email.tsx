@@ -6,14 +6,16 @@ import { MailBody } from '../partials/partials';
 interface Props {
   invitedUserName: string;
   invitedUserEmail: string;
+  workspaceName?: string;
 }
 
 export const InvitationAcceptedEmail = ({
   invitedUserName,
   invitedUserEmail,
+  workspaceName,
 }: Props) => {
   return (
-    <MailBody>
+    <MailBody workspaceName={workspaceName}>
       <Section style={content}>
         <Text style={paragraph}>Hi there,</Text>
         <Text style={paragraph}>

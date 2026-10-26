@@ -15,10 +15,9 @@ import { zod4Resolver } from "mantine-form-zod-resolver";
 import { useParams, useSearchParams } from "react-router-dom";
 import useAuth from "@/features/auth/hooks/use-auth";
 import classes from "@/features/auth/components/auth.module.css";
-import { useGetInvitationQuery } from "@/features/workspace/queries/workspace-query.ts";
+import { useGetInvitationQuery, useWorkspacePublicDataQuery } from "@/features/workspace/queries/workspace-query.ts";
 import { useRedirectIfAuthenticated } from "@/features/auth/hooks/use-redirect-if-authenticated.ts";
 import { useTranslation } from "react-i18next";
-import SsoLogin from "@/ee/components/sso-login.tsx";
 import { AuthLayout } from "./auth-layout.tsx";
 
 const formSchema = z.object({
@@ -38,6 +37,10 @@ export function InviteSignUpForm() {
   );
   const { invitationSignup, isLoading } = useAuth();
   useRedirectIfAuthenticated();
+
+  const { data: workspacePublicData } = useWorkspacePublicDataQuery();
+  const authProviders = workspacePublicData?.authProviders ?? [];
+  const hasAuthProviders = authProviders.length > 0;
 
   const form = useForm<FormValues>({
     validate: zod4Resolver(formSchema),
@@ -74,8 +77,21 @@ export function InviteSignUpForm() {
           {t("Join the workspace")}
         </Title>
 
-        <SsoLogin />
-
+        {hasAuthProviders && (
+          <Stack mb="md">
+            {authProviders.map((provider) => (
+              <Button
+                key={provider.id}
+                component="a"
+                href={`/api/sso/oidc/${provider.id}/login`}
+                fullWidth
+                variant="outline"
+              >
+                {provider.name}
+              </Button>
+            ))}
+          </Stack>
+        )}
         {!invitation.enforceSso && (
           <Stack align="stretch" justify="center" gap="xl">
             <form onSubmit={form.onSubmit(onSubmit)}>

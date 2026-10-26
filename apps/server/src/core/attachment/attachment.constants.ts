@@ -1,6 +1,7 @@
 export enum AttachmentType {
   Avatar = 'avatar',
   WorkspaceIcon = 'workspace-icon',
+  WorkspaceFavicon = 'workspace-favicon',
   SpaceIcon = 'space-icon',
   File = 'file',
   Chat = 'chat',

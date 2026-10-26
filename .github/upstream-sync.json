@@ -1,0 +1,8 @@
+{
+  "upstream": "docmost/docmost",
+  "upstreamBranch": "main",
+  "forkBranch": "master",
+  "baseRef": "v0.95.0",
+  "baseSha": "4132dd597c956a27423607d008708c0e214690da",
+  "syncedAt": "2026-10-26"
+}

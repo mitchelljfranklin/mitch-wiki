@@ -5,14 +5,16 @@ import { EmailButton, MailBody } from '../partials/partials';
 
 interface Props {
   inviteLink: string;
+  workspaceName?: string;
 }
 
-export const InvitationEmail = ({ inviteLink }: Props) => {
+export const InvitationEmail = ({ inviteLink, workspaceName }: Props) => {
+  const appName = workspaceName ?? "Mitch-Wiki";
   return (
-    <MailBody>
+    <MailBody workspaceName={workspaceName}>
       <Section style={content}>
         <Text style={paragraph}>Hi there,</Text>
-        <Text style={paragraph}>You have been invited to Docmost.</Text>
+        <Text style={paragraph}>You have been invited to {appName}.</Text>
         <Text style={paragraph}>
           Please click the button below to accept this invitation.
         </Text>

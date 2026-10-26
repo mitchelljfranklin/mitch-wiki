@@ -1,6 +1,6 @@
 import { Helmet } from "react-helmet-async";
 import { InviteSignUpForm } from "@/features/auth/components/invite-sign-up-form.tsx";
-import {getAppName} from "@/lib/config.ts";
+import {usePageTitle} from "@/hooks/use-page-title";
 import { useTranslation } from "react-i18next";
 
 export default function InviteSignup() {
@@ -9,7 +9,7 @@ export default function InviteSignup() {
   return (
     <>
       <Helmet>
-        <title>{t("Invitation Signup")} - {getAppName()}</title>
+        <title>{usePageTitle(t("Invitation Signup"))}</title>
       </Helmet>
       <InviteSignUpForm />
     </>

@@ -43,16 +43,20 @@ async function bootstrap() {
   });
 
   const reflector = app.get(Reflector);
-  const redisIoAdapter = new WsRedisIoAdapter(app);
-  await redisIoAdapter.connectToRedis();
+  const environmentService = app.get(EnvironmentService);
 
-  app.useWebSocketAdapter(redisIoAdapter);
+  // Only configure the Redis-backed WebSocket adapter when Redis is available.
+  // When disabled, the default in-memory adapter is used (single-instance only).
+  if (environmentService.isRedisEnabled()) {
+    const redisIoAdapter = new WsRedisIoAdapter(app);
+    await redisIoAdapter.connectToRedis();
+    app.useWebSocketAdapter(redisIoAdapter);
+  }
 
   await app.register(fastifyIp);
   await app.register(fastifyMultipart);
   await app.register(fastifyCookie);
 
-  const environmentService = app.get(EnvironmentService);
   const frameHeader = resolveFrameHeader(
     environmentService.isIframeEmbedAllowed(),
     environmentService.getIframeAllowedOrigins(),
@@ -113,11 +117,13 @@ async function bootstrap() {
         '/api/auth/setup',
         '/api/health',
         '/api/billing/stripe/webhook',
+        '/api/workspace/public',
         '/api/workspace/check-hostname',
-        '/api/sso/google',
         '/api/workspace/create',
         '/api/workspace/joined',
         '/api/workspace/find-by-email',
+        '/api/sso/oidc/',
+        '/api/sso/google',
       ];
 
       if (

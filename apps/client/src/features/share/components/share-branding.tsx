@@ -7,9 +7,9 @@ export default function ShareBranding() {
         variant="default"
         component="a"
         target="_blank"
-        href="https://docmost.com?ref=public-share"
+        href="https://github.com/home/mitch-wiki"
       >
-        Powered by Docmost
+        Powered by Mitch-Wiki
       </Button>
     </Affix>
   );

@@ -313,6 +313,18 @@ export class AttachmentController {
       }
     }
 
+    if (attachmentType === AttachmentType.WorkspaceFavicon) {
+      const ability = this.workspaceAbility.createForUser(user, workspace);
+      if (
+        ability.cannot(
+          WorkspaceCaslAction.Manage,
+          WorkspaceCaslSubject.Settings,
+        )
+      ) {
+        throw new ForbiddenException();
+      }
+    }
+
     if (attachmentType === AttachmentType.SpaceIcon) {
       if (!spaceId) {
         throw new BadRequestException('spaceId is required');
@@ -461,6 +473,21 @@ export class AttachmentController {
         throw new ForbiddenException();
       }
       await this.attachmentService.removeWorkspaceIcon(workspace);
+      return;
+    }
+
+    // remove workspace favicon
+    if (type === AttachmentType.WorkspaceFavicon) {
+      const ability = this.workspaceAbility.createForUser(user, workspace);
+      if (
+        ability.cannot(
+          WorkspaceCaslAction.Manage,
+          WorkspaceCaslSubject.Settings,
+        )
+      ) {
+        throw new ForbiddenException();
+      }
+      await this.attachmentService.removeWorkspaceFavicon(workspace);
       return;
     }
   }

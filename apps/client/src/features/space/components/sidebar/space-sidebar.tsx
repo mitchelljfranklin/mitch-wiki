@@ -54,11 +54,9 @@ import {
 import { mobileSidebarAtom } from "@/components/layouts/global/hooks/atoms/sidebar-atom.ts";
 import { useToggleSidebar } from "@/components/layouts/global/hooks/hooks/use-toggle-sidebar.ts";
 import { searchSpotlight } from "@/features/search/constants";
-import TemplatePickerModal from "@/ee/template/components/template-picker-modal";
-import { useHasFeature } from "@/ee/hooks/use-feature";
-import { useUpgradeLabel } from "@/ee/hooks/use-upgrade-label";
-import { Feature } from "@/ee/features";
-import { ErrorBoundary } from "react-error-boundary";
+import { useHasFeature } from "@/features/feature-flags/use-feature";
+import { useUpgradeLabel } from "@/features/feature-flags/use-upgrade-label";
+import { Feature } from "@/features/feature-flags/features";
 
 export function SpaceSidebar() {
   const { t } = useTranslation();
@@ -252,10 +250,6 @@ function SpaceMenu({
     useDisclosure(false);
   const [exportOpened, { open: openExportModal, close: closeExportModal }] =
     useDisclosure(false);
-  const [
-    templatePickerOpened,
-    { open: openTemplatePicker, close: closeTemplatePicker },
-  ] = useDisclosure(false);
   const hasTemplates = useHasFeature(Feature.TEMPLATES);
   const upgradeLabel = useUpgradeLabel();
 
@@ -337,7 +331,7 @@ function SpaceMenu({
                 withArrow
               >
                 <Menu.Item
-                  onClick={hasTemplates ? openTemplatePicker : undefined}
+                  onClick={undefined}
                   leftSection={<IconTemplate size={16} />}
                   data-disabled={!hasTemplates || undefined}
                   aria-disabled={!hasTemplates || undefined}
@@ -404,15 +398,6 @@ function SpaceMenu({
         </>
       )}
 
-      {hasTemplates && templatePickerOpened && (
-        <ErrorBoundary fallbackRender={() => null}>
-          <TemplatePickerModal
-            opened={templatePickerOpened}
-            onClose={closeTemplatePicker}
-            initialSpaceId={spaceId}
-          />
-        </ErrorBoundary>
-      )}
     </>
   );
 }

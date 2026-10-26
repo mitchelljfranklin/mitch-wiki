@@ -4,7 +4,7 @@ import ChangePassword from "@/features/user/components/change-password";
 import { Divider } from "@mantine/core";
 import AccountAvatar from "@/features/user/components/account-avatar";
 import SettingsTitle from "@/components/settings/settings-title.tsx";
-import { getAppName } from "@/lib/config.ts";
+import { usePageTitle } from "@/hooks/use-page-title";
 import { Helmet } from "react-helmet-async";
 import { useTranslation } from "react-i18next";
 import { AccountMfaSection } from "@/features/user/components/account-mfa-section";
@@ -17,7 +17,7 @@ export default function AccountSettings() {
     <>
       <Helmet>
         <title>
-          {t("My Profile")} - {getAppName()}
+          {usePageTitle(t("My Profile"))}
         </title>
       </Helmet>
       <SettingsTitle title={t("My Profile")} />

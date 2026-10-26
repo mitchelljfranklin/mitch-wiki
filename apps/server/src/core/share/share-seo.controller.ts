@@ -66,7 +66,7 @@ export class ShareSeoController {
       );
 
       if (!share) {
-        return this.sendIndex(indexFilePath, res);
+        return this.sendIndex(indexFilePath, res, workspace);
       }
 
       const rawTitle = htmlEscape(share?.sharedPage.title ?? 'untitled');
@@ -84,17 +84,39 @@ export class ShareSeoController {
         .join('\n    ');
 
       const html = fs.readFileSync(indexFilePath, 'utf8');
-      const transformedHtml = html
+      let transformedHtml = html
         .replace(/<title>[\s\S]*?<\/title>/i, `<title>${metaTitle}</title>`)
         .replace(metaTagVar, metaTags);
+
+      transformedHtml = this.injectFavicon(transformedHtml, workspace);
 
       res.type('text/html').send(transformedHtml);
     }
   }
 
-  sendIndex(indexFilePath: string, res: FastifyReply) {
-    const stream = fs.createReadStream(indexFilePath);
-    res.type('text/html').send(stream);
+  private injectFavicon(html: string, workspace?: Workspace): string {
+    if (!workspace) {
+      return html;
+    }
+
+    const settings = (workspace.settings ?? {}) as Record<string, any>;
+    const faviconFile = settings?.branding?.favicon;
+
+    if (!faviconFile) {
+      return html;
+    }
+
+    const faviconUrl = `/api/attachments/img/workspace-favicon/${faviconFile}`;
+    return html.replace(
+      /(<link[^>]*rel="icon"[^>]*href=")[^"]*/gi,
+      `$1${faviconUrl}`,
+    );
+  }
+
+  sendIndex(indexFilePath: string, res: FastifyReply, workspace?: Workspace) {
+    let html = fs.readFileSync(indexFilePath, 'utf8');
+    html = this.injectFavicon(html, workspace);
+    res.type('text/html').send(html);
   }
 
   extractPageSlugId(slug: string): string {

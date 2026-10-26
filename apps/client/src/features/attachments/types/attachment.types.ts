@@ -19,11 +19,13 @@ export enum AvatarIconType {
   AVATAR = "avatar",
   SPACE_ICON = "space-icon",
   WORKSPACE_ICON = "workspace-icon",
+  WORKSPACE_FAVICON = "workspace-favicon",
 }
 
 export enum AttachmentType {
   AVATAR = "avatar",
   WORKSPACE_ICON = "workspace-icon",
   SPACE_ICON = "space-icon",
+  WORKSPACE_FAVICON = "workspace-favicon",
   FILE = "file",
 }

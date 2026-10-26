@@ -8,9 +8,9 @@ import {
 } from "@tabler/icons-react";
 import { modals } from "@mantine/modals";
 import { useTranslation } from "react-i18next";
-import { useHasFeature } from "@/ee/hooks/use-feature";
-import { Feature } from "@/ee/features";
-import { useUpgradeLabel } from "@/ee/hooks/use-upgrade-label";
+import { useHasFeature } from "@/features/feature-flags/use-feature";
+import { Feature } from "@/features/feature-flags/features";
+import { useUpgradeLabel } from "@/features/feature-flags/use-upgrade-label";
 
 type CommentMenuProps = {
   onEditComment: () => void;

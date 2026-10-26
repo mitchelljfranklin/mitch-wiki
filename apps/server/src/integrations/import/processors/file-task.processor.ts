@@ -41,22 +41,12 @@ export class FileTaskProcessor extends WorkerHost implements OnModuleDestroy {
     }
   }
 
-  private getPdfExportService() {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const PdfExportModule = require('./../../../ee/pdf-export/pdf-export.service');
-    return this.moduleRef.get(PdfExportModule.PdfExportService, {
-      strict: false,
-    });
-  }
-
-  private async processExportTask(fileTaskId: string): Promise<void> {
-    const pdfExportService = this.getPdfExportService();
-    await pdfExportService.generateAndStorePdf(fileTaskId);
+  private async processExportTask(_fileTaskId: string): Promise<void> {
+    throw new Error('PDF export is not available without enterprise license');
   }
 
   private async processExportCleanup(): Promise<void> {
-    const pdfExportService = this.getPdfExportService();
-    await pdfExportService.cleanupExpiredExports();
+    throw new Error('PDF export is not available without enterprise license');
   }
 
   @OnWorkerEvent('active')
