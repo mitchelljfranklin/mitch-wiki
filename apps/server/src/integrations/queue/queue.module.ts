@@ -151,6 +151,10 @@ export class QueueModule {
                 id: `in-process-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
               });
             },
+            // BullMQ repeatables need a worker, which only exists with Redis.
+            // Accept the call so bootstrap (integration token refresh) succeeds.
+            upsertJobScheduler: () =>
+              Promise.resolve({ id: `in-process-scheduler-${queueName}` }),
           }),
           inject: [InProcessQueueService],
         });

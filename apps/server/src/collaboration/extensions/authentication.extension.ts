@@ -10,6 +10,7 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  Optional,
   UnauthorizedException,
 } from '@nestjs/common';
 import { RedisService } from '@nestjs-labs/nestjs-ioredis';
@@ -42,11 +43,13 @@ export class AuthenticationExtension implements Extension {
     private pageRepo: PageRepo,
     private readonly spaceMemberRepo: SpaceMemberRepo,
     private readonly pagePermissionRepo: PagePermissionRepo,
-    private readonly redisService: RedisService,
+    @Optional() private readonly redisService: RedisService,
   ) {}
 
   async onConfigure({ instance }: onConfigurePayload) {
     this.instance = instance;
+    // Redis is optional: without it access rechecks stay local to this process.
+    if (!this.redisService) return;
     this.subscriber = this.redisService.getOrThrow().duplicate();
     this.subscriber.on('error', () => {});
     this.subscriber.on('message', async (_channel, message) => {

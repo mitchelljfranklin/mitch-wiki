@@ -27,7 +27,9 @@ const collabRedisIsEnabled = !!process.env.REDIS_URL;
     EnvironmentModule,
     CaslModule,
     CollaborationModule,
-    QueueModule,
+    // forRoot() supplies the BullMQ queue tokens (or the in-process mocks when
+    // Redis is disabled); importing the bare module provides neither.
+    QueueModule.forRoot(),
     HealthModule,
     EventEmitterModule.forRoot(),
     // Only connect to Redis when REDIS_URL is configured.

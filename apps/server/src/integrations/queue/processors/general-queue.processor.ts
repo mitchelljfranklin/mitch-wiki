@@ -80,8 +80,13 @@ export class GeneralQueueProcessor
   }
 
   async onModuleDestroy(): Promise<void> {
-    if (this.worker) {
-      await this.worker.close();
+    // The worker getter throws when BullMQ is not registered (Redis disabled).
+    try {
+      if (this.worker) {
+        await this.worker.close();
+      }
+    } catch {
+      /* no worker without Redis */
     }
   }
 }

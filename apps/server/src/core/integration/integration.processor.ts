@@ -1,5 +1,5 @@
 import { OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
-import { Logger } from '@nestjs/common';
+import { Logger, Optional } from '@nestjs/common';
 import { Job } from 'bullmq';
 import { QueueJob, QueueName } from '../../integrations/queue/constants';
 import { IntegrationConnectionRepo } from './repos/integration-connection.repo';
@@ -16,15 +16,19 @@ const JOB_TIMEOUT_MS = 5 * 60 * 1000;
 @Processor(QueueName.INTEGRATION_QUEUE)
 export class IntegrationProcessor extends WorkerHost {
   private readonly logger = new Logger(IntegrationProcessor.name);
-  private readonly refreshLock: RefreshLock;
+  private readonly refreshLock: RefreshLock | null = null;
 
   constructor(
     private readonly connectionRepo: IntegrationConnectionRepo,
     private readonly oauthService: OAuthService,
-    private readonly redisService: RedisService,
+    @Optional() private readonly redisService: RedisService,
   ) {
     super();
-    this.refreshLock = new RefreshLock(this.redisService.getOrThrow());
+    // The BullMQ worker only exists when Redis is configured; the optional
+    // injection keeps Nest able to construct this provider in the fallback.
+    if (this.redisService) {
+      this.refreshLock = new RefreshLock(this.redisService.getOrThrow());
+    }
   }
 
   async process(job: Job, token?: string, signal?: AbortSignal): Promise<void> {
@@ -95,9 +99,11 @@ export class IntegrationProcessor extends WorkerHost {
           signal.throwIfAborted();
           const connection = connections[next++];
           inFlight.add(connection.id);
-          const lockToken = await this.refreshLock.acquire(connection.id);
+          const lockToken = this.refreshLock
+            ? await this.refreshLock.acquire(connection.id)
+            : null;
           // Someone else is refreshing this connection right now.
-          if (!lockToken) {
+          if (this.refreshLock && !lockToken) {
             inFlight.delete(connection.id);
             continue;
           }
@@ -110,7 +116,9 @@ export class IntegrationProcessor extends WorkerHost {
             );
           } finally {
             inFlight.delete(connection.id);
-            await this.refreshLock.release(connection.id, lockToken);
+            if (this.refreshLock && lockToken) {
+              await this.refreshLock.release(connection.id, lockToken);
+            }
           }
         }
       };

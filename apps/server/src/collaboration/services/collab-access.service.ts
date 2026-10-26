@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
 import { RedisService } from '@nestjs-labs/nestjs-ioredis';
 import { COLLAB_ACCESS_RECHECK_CHANNEL } from '../constants';
 
@@ -11,10 +11,12 @@ export type CollabAccessRecheck = {
 export class CollabAccessService {
   private readonly logger = new Logger(CollabAccessService.name);
 
-  constructor(private readonly redisService: RedisService) {}
+  constructor(@Optional() private readonly redisService: RedisService) {}
 
   async recheckAccess(recheck: CollabAccessRecheck): Promise<void> {
     if (!recheck.userIds?.length && !recheck.pageIds?.length) return;
+    // Redis is optional: without it there is no cross-instance recheck channel.
+    if (!this.redisService) return;
     // not awaited, ioredis queues the command and can hold the reply for minutes while redis reconnects
     try {
       this.redisService

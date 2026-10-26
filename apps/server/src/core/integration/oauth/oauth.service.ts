@@ -5,6 +5,7 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import { InjectKysely } from 'nestjs-kysely';
 import { KyselyDB, KyselyTransaction } from '@docmost/db/types/kysely.types';
@@ -107,7 +108,7 @@ export type OAuthStatePayload = {
 @Injectable()
 export class OAuthService {
   private readonly logger = new Logger(OAuthService.name);
-  private readonly refreshLock: RefreshLock;
+  private readonly refreshLock: RefreshLock | null = null;
   // Concurrent requests for one connection share a single refresh in this process.
   private readonly pendingRefreshes = new Map<string, Promise<string>>();
 
@@ -123,9 +124,13 @@ export class OAuthService {
     private readonly userRepo: UserRepo,
     private readonly workspaceAbility: WorkspaceAbilityFactory,
     @Inject(AUDIT_SERVICE) private readonly auditService: IAuditService,
-    private readonly redisService: RedisService,
+    @Optional() private readonly redisService: RedisService,
   ) {
-    this.refreshLock = new RefreshLock(this.redisService.getOrThrow());
+    // Redis is optional: without it the in-process pendingRefreshes map is the
+    // only dedupe, which is enough for a single instance.
+    if (this.redisService) {
+      this.refreshLock = new RefreshLock(this.redisService.getOrThrow());
+    }
   }
 
   async getAuthorizationUrl(
@@ -654,6 +659,23 @@ export class OAuthService {
   private async refreshForRequest(
     connection: IntegrationConnection,
   ): Promise<string> {
+    // Without Redis there is no cross-process lock; pendingRefreshes already
+    // dedupes concurrent requests for the same connection in this process.
+    if (!this.refreshLock) {
+      try {
+        return await this.refreshAccessToken(connection);
+      } catch (err) {
+        if (
+          err instanceof TokenInvalidError ||
+          err instanceof TokenExpiredError
+        ) {
+          throw err;
+        }
+        // A transient failure keeps the connection; a later request tries again.
+        throw new TokenExpiredError();
+      }
+    }
+
     const lockToken = await this.refreshLock.acquire(connection.id);
     if (!lockToken) {
       await this.refreshLock.waitForRelease(connection.id, {

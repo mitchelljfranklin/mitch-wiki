@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
 import { IntegrationRegistry } from '../registry/integration-registry';
 import { IntegrationConnectionRepo } from '../repos/integration-connection.repo';
 import { IntegrationRepo } from '../repos/integration.repo';
@@ -26,16 +26,19 @@ const UNFURL_CACHE_PREFIX = 'unfurl:';
 @Injectable()
 export class UnfurlService {
   private readonly logger = new Logger(UnfurlService.name);
-  private readonly redis: Redis;
+  private readonly redis: Redis | null = null;
 
   constructor(
     private readonly registry: IntegrationRegistry,
     private readonly integrationRepo: IntegrationRepo,
     private readonly connectionRepo: IntegrationConnectionRepo,
     private readonly oauthService: OAuthService,
-    private readonly redisService: RedisService,
+    @Optional() private readonly redisService: RedisService,
   ) {
-    this.redis = this.redisService.getOrThrow();
+    // Redis is optional: without it cards are simply not cached.
+    if (this.redisService) {
+      this.redis = this.redisService.getOrThrow();
+    }
   }
 
   async unfurl(
@@ -91,7 +94,7 @@ export class UnfurlService {
     }
 
     const cacheKey = this.buildCacheKey(workspaceId, userId, connection, url);
-    const cached = await this.redis.get(cacheKey);
+    const cached = this.redis ? await this.redis.get(cacheKey) : null;
     if (cached) {
       return JSON.parse(cached);
     }
@@ -110,12 +113,7 @@ export class UnfurlService {
         integrationId: integration.id,
       });
 
-      await this.redis.set(
-        cacheKey,
-        JSON.stringify(unfurlResult),
-        'EX',
-        UNFURL_CACHE_TTL,
-      );
+      await this.cacheResult(cacheKey, unfurlResult);
 
       return unfurlResult;
     } catch (err) {
@@ -167,7 +165,21 @@ export class UnfurlService {
   }
 
   private async cacheNull(cacheKey: string, ttl: number): Promise<void> {
+    if (!this.redis) return;
     await this.redis.set(cacheKey, 'null', 'EX', ttl);
+  }
+
+  private async cacheResult(
+    cacheKey: string,
+    result: UnfurlResult,
+  ): Promise<void> {
+    if (!this.redis) return;
+    await this.redis.set(
+      cacheKey,
+      JSON.stringify(result),
+      'EX',
+      UNFURL_CACHE_TTL,
+    );
   }
 
   // One cached card per URL for every member and workspace.
@@ -183,7 +195,7 @@ export class UnfurlService {
 
     const hash = crypto.createHash('sha256').update(url).digest('hex');
     const cacheKey = `${UNFURL_CACHE_PREFIX}public:${hash}`;
-    const cached = await this.redis.get(cacheKey);
+    const cached = this.redis ? await this.redis.get(cacheKey) : null;
     if (cached) {
       return JSON.parse(cached);
     }
@@ -194,12 +206,7 @@ export class UnfurlService {
         match,
         patternType,
       });
-      await this.redis.set(
-        cacheKey,
-        JSON.stringify(unfurlResult),
-        'EX',
-        UNFURL_CACHE_TTL,
-      );
+      await this.cacheResult(cacheKey, unfurlResult);
       return unfurlResult;
     } catch (err) {
       // A 404 is the normal answer for a private repo.
