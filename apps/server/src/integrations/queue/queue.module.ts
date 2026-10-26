@@ -55,6 +55,16 @@ const PER_QUEUE_DEFAULT_JOB_OPTIONS: Record<string, Record<string, unknown>> = {
     removeOnComplete: { count: 200 },
     removeOnFail: { count: 100 },
   },
+  [QueueName.INTEGRATION_QUEUE]: {
+    removeOnComplete: true,
+    removeOnFail: { count: 50 },
+    attempts: 3,
+  },
+  [QueueName.SIEM_QUEUE]: {
+    removeOnComplete: true,
+    removeOnFail: true,
+    attempts: 1,
+  },
 };
 
 // All queue names registered across the application. Must be kept in sync
@@ -92,9 +102,11 @@ export class QueueModule {
               connection: {
                 host: redisConfig.host,
                 port: redisConfig.port,
+                username: redisConfig.username,
                 password: redisConfig.password,
                 db: redisConfig.db,
                 family: redisConfig.family,
+                tls: redisConfig.tls,
                 retryStrategy: createRetryStrategy(),
               },
               defaultJobOptions: REDIS_GLOBAL_DEFAULT_JOB_OPTIONS,

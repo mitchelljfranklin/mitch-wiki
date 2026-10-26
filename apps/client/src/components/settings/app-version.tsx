@@ -37,7 +37,7 @@ export default function AppVersion() {
           disabled={!hasUpdate}
           onClick={() => {
             window.open(
-              "https://github.com/home/mitch-wiki/releases",
+              "https://github.com/mitchelljfranklin/mitch-wiki/releases",
               "_blank",
             );
           }}
@@ -47,7 +47,7 @@ export default function AppVersion() {
             c="dimmed"
             component="a"
             mr={45}
-            href="https://github.com/docmost/docmost/releases"
+            href="https://github.com/mitchelljfranklin/mitch-wiki/releases"
             target="_blank"
           >
             {appVersion?.currentVersion && <>v{appVersion?.currentVersion}</>}

@@ -1,13 +1,10 @@
 import { ForgotPasswordForm } from "@/features/auth/components/forgot-password-form";
-import { usePageTitle } from "@/hooks/use-page-title";
-import { Helmet } from "react-helmet-async";
+import { DocumentTitle } from "@/components/ui/document-title.tsx";
 
 export default function ForgotPassword() {
     return (
         <>
-            <Helmet>
-                <title>{usePageTitle("Forgot Password")}</title>
-            </Helmet>
+            <DocumentTitle title="Forgot Password" />
             <ForgotPasswordForm />
         </>
     );

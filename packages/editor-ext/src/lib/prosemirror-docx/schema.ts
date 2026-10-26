@@ -1,5 +1,13 @@
-import { HeadingLevel, ShadingType } from 'docx';
+import {
+  ExternalHyperlink,
+  FootnoteReferenceRun,
+  HeadingLevel,
+  Paragraph,
+  ShadingType,
+  TextRun,
+} from 'docx';
 import { Node } from 'prosemirror-model';
+import { sanitizeIntegrationUrl } from '../integration-link/integration-link';
 import {
   DocxSerializerAsync,
   MarkSerializer,
@@ -61,6 +69,27 @@ const renderFileLine: NodeSerializerAsync[string] = (state, node) => {
 const renderEmbedLine: NodeSerializerAsync[string] = (state, node) => {
   const label = node.attrs?.src || node.attrs?.url || 'embed';
   state.text(label);
+  state.closeBlock(node);
+};
+
+const renderIntegrationMention: NodeSerializerAsync[string] = (state, node) => {
+  const url = sanitizeIntegrationUrl(node.attrs?.url);
+  if (!url) return;
+  state.current.push(
+    new ExternalHyperlink({
+      link: url,
+      children: [new TextRun({ text: url, style: 'Hyperlink' })],
+    }),
+  );
+};
+
+const renderIntegrationCard: NodeSerializerAsync[string] = async (
+  state,
+  node,
+  parent,
+  index,
+) => {
+  await renderIntegrationMention(state, node, parent, index);
   state.closeBlock(node);
 };
 
@@ -137,6 +166,8 @@ export const defaultAsyncNodes: NodeSerializerAsync = {
   attachment: renderFileLine,
   embed: renderEmbedLine,
   youtube: renderEmbedLine,
+  integrationCard: renderIntegrationCard,
+  integrationMention: renderIntegrationMention,
   async callout(state, node) {
     await state.renderContent(node, { style: 'IntenseQuote' });
   },
@@ -148,6 +179,19 @@ export const defaultAsyncNodes: NodeSerializerAsync = {
     state.closeBlock(node, { heading: HeadingLevel.HEADING_4 });
   },
   async detailsContent(state, node) {
+    await state.renderContent(node);
+  },
+  async tabs(state, node) {
+    await state.renderContent(node);
+  },
+  async tab(state, node) {
+    await state.renderContent(node);
+  },
+  async tabLabel(state, node) {
+    await state.renderInline(node);
+    state.closeBlock(node, { heading: HeadingLevel.HEADING_4 });
+  },
+  async tabPanel(state, node) {
     await state.renderContent(node);
   },
   async columns(state, node) {
@@ -168,9 +212,31 @@ export const defaultAsyncNodes: NodeSerializerAsync = {
   pageBreak(state, node) {
     state.closeBlock(node, { pageBreakBefore: true });
   },
+  footnoteReference(state, node) {
+    const number =
+      Number(node.attrs?.referenceNumber) || state.$footnoteCounter + 1;
+    state.$footnoteCounter = Math.max(state.$footnoteCounter, number);
+    // seed an empty body so the reference stays valid even if the trailing
+    // footnotes list is missing; the footnotes node overwrites it with content
+    if (!state.footnotes[number]) {
+      state.footnotes[number] = { children: [new Paragraph('')] };
+    }
+    state.current.push(new FootnoteReferenceRun(number));
+  },
+  async footnotes(state, node) {
+    for (let i = 0; i < node.childCount; i += 1) {
+      const item = node.child(i);
+      const number =
+        Number(String(item.attrs?.id ?? '').replace('fn:', '')) || i + 1;
+      await state.footnoteDefinition(item, number);
+    }
+  },
+  // items are consumed by the footnotes handler above
+  footnote() {},
   // No usable static export representation: skip without failing.
   subpages() {},
   transclusionReference() {},
+  base() {},
 };
 
 export const defaultMarks: MarkSerializer = {

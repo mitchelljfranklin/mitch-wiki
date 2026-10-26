@@ -15,7 +15,7 @@ import { MemberInfo, UserSpaceRole } from './types';
 import { executeWithCursorPagination } from '@docmost/db/pagination/cursor-pagination';
 import { GroupRepo } from '@docmost/db/repos/group/group.repo';
 import { SpaceRepo } from '@docmost/db/repos/space/space.repo';
-import { withCache } from '../../../common/helpers/with-cache';
+import { CacheOptions, withCache } from '../../../common/helpers/with-cache';
 import {
   CacheKey,
   PERMISSION_CACHE_TTL_MS,
@@ -46,8 +46,10 @@ export class SpaceMemberRepo {
     updatableSpaceMember: UpdatableSpaceMember,
     spaceMemberId: string,
     spaceId: string,
+    trx?: KyselyTransaction,
   ): Promise<void> {
-    await this.db
+    const db = dbOrTx(this.db, trx);
+    await db
       .updateTable('spaceMembers')
       .set(updatableSpaceMember)
       .where('id', '=', spaceMemberId)
@@ -92,8 +94,13 @@ export class SpaceMemberRepo {
       .execute();
   }
 
-  async roleCountBySpaceId(role: string, spaceId: string): Promise<number> {
-    const { count } = await this.db
+  async roleCountBySpaceId(
+    role: string,
+    spaceId: string,
+    trx?: KyselyTransaction,
+  ): Promise<number> {
+    const db = dbOrTx(this.db, trx);
+    const { count } = await db
       .selectFrom('spaceMembers')
       .select((eb) => eb.fn.count('role').as('count'))
       .where('role', '=', role)
@@ -221,6 +228,7 @@ export class SpaceMemberRepo {
   async getUserSpaceRoles(
     userId: string,
     spaceId: string,
+    opts?: CacheOptions,
   ): Promise<UserSpaceRole[]> {
     return withCache(
       this.cacheManager,
@@ -251,6 +259,7 @@ export class SpaceMemberRepo {
         }
         return roles;
       },
+      opts,
     );
   }
 
@@ -278,11 +287,16 @@ export class SpaceMemberRepo {
     return new Set(rows.map((r) => r.userId));
   }
 
-  async getSpaceIdsByGroupId(groupId: string): Promise<string[]> {
-    const rows = await this.db
+  async getSpaceIdsByGroupIds(
+    groupIds: string[],
+    opts?: { trx?: KyselyTransaction },
+  ): Promise<string[]> {
+    if (groupIds.length === 0) return [];
+    const rows = await dbOrTx(this.db, opts?.trx)
       .selectFrom('spaceMembers')
       .select('spaceId')
-      .where('groupId', '=', groupId)
+      .distinct()
+      .where('groupId', 'in', groupIds)
       .execute();
 
     return rows.map((r) => r.spaceId);

@@ -3,22 +3,30 @@ import WorkspaceNameForm from "@/features/workspace/components/settings/componen
 import WorkspaceIcon from "@/features/workspace/components/settings/components/workspace-icon.tsx";
 import WorkspaceFavicon from "@/features/workspace/components/settings/components/workspace-favicon.tsx";
 import { useTranslation } from "react-i18next";
-import { usePageTitle } from "@/hooks/use-page-title";
-import { Helmet } from "react-helmet-async";
+import { isBetaPublicSpaces } from "@/lib/config.ts";
 import { Divider } from "@mantine/core";
 import WorkspaceDefaultPageEditMode from "@/features/workspace/components/settings/components/workspace-default-page-edit-mode.tsx";
+import AllowPublicSpaces from "@/features/workspace/components/settings/components/allow-public-spaces.tsx";
+import { DocumentTitle } from "@/components/ui/document-title.tsx";
 
 export default function WorkspaceSettings() {
   const { t } = useTranslation();
   return (
     <>
-      <Helmet>
-        <title>{usePageTitle("Workspace Settings")}</title>
-      </Helmet>
+      <DocumentTitle title="Workspace Settings" />
       <SettingsTitle title={t("General")} />
       <WorkspaceIcon />
       <WorkspaceFavicon />
       <WorkspaceNameForm />
+
+      <Divider my="md" />
+
+      {isBetaPublicSpaces() && (
+        <>
+          <Divider my="md" />
+          <AllowPublicSpaces />
+        </>
+      )}
 
       <Divider my="md" />
       <WorkspaceDefaultPageEditMode />

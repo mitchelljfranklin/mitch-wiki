@@ -116,8 +116,8 @@ export class AttachmentService {
         });
       }
 
-      // Only index PDFs and DOCX files
-      if (['.pdf', '.docx'].includes(attachment.fileExt.toLowerCase())) {
+      // Only index PDF, DOCX and TXT files
+      if (['.pdf', '.docx', '.txt'].includes(attachment.fileExt.toLowerCase())) {
         await this.attachmentQueue.add(
           QueueJob.ATTACHMENT_INDEX_CONTENT,
           {
@@ -260,6 +260,11 @@ export class AttachmentService {
     } catch (error) {
       this.logger.error('deleteRedundantFile', error);
     }
+  }
+
+  async deleteAttachment(attachment: Attachment) {
+    await this.storageService.delete(attachment.filePath);
+    await this.attachmentRepo.deleteAttachmentById(attachment.id);
   }
 
   async uploadToDrive(filePath: string, fileContent: Buffer | Readable) {

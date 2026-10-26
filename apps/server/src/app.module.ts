@@ -6,6 +6,7 @@ import { AuditActorInterceptor } from './common/interceptors/audit-actor.interce
 import { CoreModule } from './core/core.module';
 import { EnvironmentModule } from './integrations/environment/environment.module';
 import { CollaborationModule } from './collaboration/collaboration.module';
+import { CollabAccessModule } from './collaboration/collab-access.module';
 import { WsModule } from './ws/ws.module';
 import { DatabaseModule } from '@docmost/db/database.module';
 import { StorageModule } from './integrations/storage/storage.module';
@@ -21,12 +22,15 @@ import { TelemetryModule } from './integrations/telemetry/telemetry.module';
 import { RedisModule } from '@nestjs-labs/nestjs-ioredis';
 import { RedisConfigService } from './integrations/redis/redis-config.service';
 import { CacheModule } from '@nestjs/cache-manager';
-import KeyvRedis from '@keyv/redis';
+import KeyvRedis, { defaultReconnectStrategy } from '@keyv/redis';
+import { parseRedisUrl } from './common/helpers';
 import { LoggerModule } from './common/logger/logger.module';
 import { ClsModule } from 'nestjs-cls';
 import { ThrottleModule } from './integrations/throttle/throttle.module';
 import { NoopAuditModule } from './integrations/audit/audit.module';
 import { PERMISSION_CACHE_TTL_MS } from './common/helpers/cache-keys';
+import { OutboundModule } from './integrations/outbound/outbound.module';
+import { EncryptionModule } from './integrations/encryption/encryption.module';
 
 const redisIsEnabled = !!process.env.REDIS_URL;
 
@@ -40,6 +44,7 @@ const redisIsEnabled = !!process.env.REDIS_URL;
     CoreModule,
     DatabaseModule,
     EnvironmentModule,
+    EncryptionModule,
     // Only connect to Redis when REDIS_URL is configured.
     // When disabled, all subsystems fall back to in-memory alternatives.
     ...(redisIsEnabled
@@ -57,9 +62,19 @@ const redisIsEnabled = !!process.env.REDIS_URL;
         // When disabled, fall back to an in-memory LRU cache.
         if (environmentService.isRedisEnabled()) {
           const redisUrl = environmentService.getRedisUrl();
+          const { family, tls } = parseRedisUrl(redisUrl);
           return {
             ttl: PERMISSION_CACHE_TTL_MS,
-            stores: [new KeyvRedis(redisUrl)],
+            stores: [
+              new KeyvRedis({
+                url: redisUrl,
+                socket: {
+                  family,
+                  reconnectStrategy: defaultReconnectStrategy,
+                  ...tls,
+                },
+              }),
+            ],
           };
         }
 
@@ -70,6 +85,7 @@ const redisIsEnabled = !!process.env.REDIS_URL;
       inject: [EnvironmentService],
     }),
     CollaborationModule,
+    CollabAccessModule,
     WsModule,
     QueueModule.forRoot(),
     StaticModule,
@@ -87,6 +103,7 @@ const redisIsEnabled = !!process.env.REDIS_URL;
     TelemetryModule,
     ThrottleModule,
     NoopAuditModule,
+    OutboundModule,
   ],
   controllers: [AppController],
   providers: [

@@ -68,7 +68,8 @@ Before committing: `pnpm run client:build`, `pnpm run server:build`, `pnpm docs:
 
 - **Feature gates always return false**: `useHasFeature()` is a single stub in `features/feature-flags/use-feature.ts`. To ship a gated feature, change that stub; feature keys belong in `features/feature-flags/features.ts`. Never import from `@/ee/*` (deleted).
 - **API calls** go through `@/lib/api-client.ts` (plain axios instance, baseURL `/api`, unwraps the envelope; supports all axios methods). Bodyless POSTs must send `{}` plus `Content-Type: application/json` or Fastify returns 415.
-- **Hooks at top level**: `useAtom`, `usePageTitle`, `useHasFeature` must not sit in conditionals/early returns (see `pages/auth/setup-workspace.tsx`). Auth pages use `useWorkspacePublicDataQuery()` for branding and fall back to "Mitch-Wiki" when there is no workspace.
+- **Hooks at top level**: `useAtom`, `useAtomValue`, `useHasFeature` must not sit in conditionals/early returns (see `pages/auth/setup-workspace.tsx`). Auth pages use `useWorkspacePublicDataQuery()` for branding and fall back to "Mitch-Wiki" when there is no workspace.
+- **Page titles** go through `<DocumentTitle title={t("…")} />` (`components/ui/document-title.tsx`), which appends the app name. Do not hand-roll `Helmet` blocks in new pages.
 - **Auth providers are soft-deleted** (`deletedAt`), never hard-deleted: every query must filter `deletedAt is null`, including the admin list and the login page's public workspace data.
 - **SSO provider IDs are DB UUIDs**: routes and buttons use `provider.id` (`/api/sso/oidc/<id>/login`), not a `providerId` field.
 - **OIDC nonce**: openid-client v6 validates the nonce itself, so pass `expectedNonce: storedStateEntry.nonce` into `authorizationCodeGrant`; omitting it fails with `OAUTH_JWT_CLAIM_COMPARISON_FAILED`.

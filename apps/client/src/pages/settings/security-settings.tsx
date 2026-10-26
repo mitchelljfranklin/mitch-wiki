@@ -1,7 +1,6 @@
 import SettingsTitle from "@/components/settings/settings-title.tsx";
 import { useTranslation } from "react-i18next";
-import { usePageTitle } from "@/hooks/use-page-title";
-import { Helmet } from "react-helmet-async";
+import { DocumentTitle } from "@/components/ui/document-title.tsx";
 import { useState } from "react";
 import {
   Box,
@@ -155,9 +154,7 @@ export default function SecuritySettings() {
 
   return (
     <>
-      <Helmet>
-        <title>{usePageTitle(t("Security & SSO"))}</title>
-      </Helmet>
+      <DocumentTitle title={t("Security & SSO")} />
       <SettingsTitle title={t("Security & SSO")} />
 
       <Paper withBorder p="md" mb="lg">

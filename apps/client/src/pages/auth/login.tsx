@@ -1,7 +1,6 @@
 import { LoginForm } from "@/features/auth/components/login-form";
-import { Helmet } from "react-helmet-async";
-import { usePageTitle } from "@/hooks/use-page-title";
 import { useTranslation } from "react-i18next";
+import { DocumentTitle } from "@/components/ui/document-title.tsx";
 import { useWorkspacePublicDataQuery } from "@/features/workspace/queries/workspace-query";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -20,11 +19,7 @@ export default function LoginPage() {
 
   return (
     <>
-      <Helmet>
-        <title>
-          {usePageTitle(t("Login"))}
-        </title>
-      </Helmet>
+      <DocumentTitle title={t("Login")} />
       <LoginForm />
     </>
   );

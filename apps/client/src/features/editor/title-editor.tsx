@@ -86,6 +86,7 @@ export function TitleEditor({
     },
     editable: editable,
     content: title,
+    textDirection: "auto",
     immediatelyRender: true,
     shouldRerenderOnTransaction: false,
     editorProps: {
@@ -148,7 +149,8 @@ export function TitleEditor({
         },
       };
 
-      if (page.title !== titleEditor.getText()) return;
+      if (!titleEditor.isDestroyed && page.title !== titleEditor.getText())
+        return;
 
       updatePageData(page);
 

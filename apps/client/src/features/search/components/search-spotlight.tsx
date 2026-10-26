@@ -1,7 +1,7 @@
 import { Spotlight } from "@mantine/spotlight";
 import { IconSearch } from "@tabler/icons-react";
-import { Group, VisuallyHidden } from "@mantine/core";
-import React, { useState, useMemo } from "react";
+import { Group, VisuallyHidden, Text } from "@mantine/core";
+import React, { useState, useMemo, useCallback } from "react";
 import { useDebouncedValue } from "@mantine/hooks";
 import { useTranslation } from "react-i18next";
 import { searchSpotlightStore } from "../constants.ts";
@@ -22,6 +22,9 @@ export function SearchSpotlight({ spaceId }: SearchSpotlightProps) {
   const [filters, setFilters] = useState<{
     spaceId?: string | null;
     contentType?: string;
+    creatorId?: string | null;
+    labelIds?: string[];
+    titleOnly?: boolean;
   }>({
     contentType: "page",
   });
@@ -38,13 +41,30 @@ export function SearchSpotlight({ spaceId }: SearchSpotlightProps) {
       params.spaceId = filters.spaceId;
     }
 
+    if (filters.creatorId) {
+      params.creatorId = filters.creatorId;
+    }
+
+    if (filters.labelIds?.length) {
+      params.labelIds = filters.labelIds;
+    }
+
+    if (filters.titleOnly) {
+      params.titleOnly = true;
+    }
+
     return params;
   }, [debouncedSearchQuery, filters]);
 
-  const { data: searchResults, isLoading } = useUnifiedSearch(
+  const { data: searchResults, isFetching } = useUnifiedSearch(
     searchParams,
     true,
   );
+
+  const isFilterBrowse =
+    (filters.labelIds?.length ?? 0) > 0 || !!filters.creatorId;
+  // while the debounce is pending the empty list is not a settled "no results"
+  const isQuerySettled = query === debouncedSearchQuery;
 
   // Determine result type for rendering
   const isAttachmentSearch =
@@ -59,9 +79,9 @@ export function SearchSpotlight({ spaceId }: SearchSpotlightProps) {
     />
   ));
 
-  const handleFiltersChange = (newFilters: any) => {
+  const handleFiltersChange = useCallback((newFilters: any) => {
     setFilters(newFilters);
-  };
+  }, []);
 
   return (
     <>
@@ -97,7 +117,7 @@ export function SearchSpotlight({ spaceId }: SearchSpotlightProps) {
         </div>
 
         <VisuallyHidden role="status" aria-live="polite">
-          {query.length > 0 && !isLoading
+          {(query.length > 0 || isFilterBrowse) && !isFetching
             ? resultItems.length === 0
               ? t("No results found")
               : t("{{count}} results found", { count: resultItems.length })
@@ -105,15 +125,28 @@ export function SearchSpotlight({ spaceId }: SearchSpotlightProps) {
         </VisuallyHidden>
 
         <Spotlight.ActionsList>
-          {query.length === 0 && resultItems.length === 0 && (
+          {query.length === 0 && !isFilterBrowse && resultItems.length === 0 && (
             <Spotlight.Empty>{t("Start typing to search...")}</Spotlight.Empty>
           )}
 
-          {query.length > 0 && !isLoading && resultItems.length === 0 && (
-            <Spotlight.Empty>{t("No results found...")}</Spotlight.Empty>
-          )}
+          {(query.length > 0 || isFilterBrowse) &&
+            !isFetching &&
+            isQuerySettled &&
+            resultItems.length === 0 && (
+              <Spotlight.Empty>{t("No results found...")}</Spotlight.Empty>
+            )}
 
           {resultItems.length > 0 && <>{resultItems}</>}
+
+          {(query.length > 0 || isFilterBrowse) &&
+            isFetching &&
+            resultItems.length === 0 && (
+              <Spotlight.Empty>
+                <Text size="sm" style={{ marginTop: 10 }}>
+                  {t("Searching...")}
+                </Text>
+              </Spotlight.Empty>
+            )}
         </Spotlight.ActionsList>
       </Spotlight.Root>
     </>

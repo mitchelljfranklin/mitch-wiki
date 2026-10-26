@@ -7,7 +7,7 @@ export class VersionService {
   constructor() {}
 
   async getVersion() {
-    const url = `https://api.github.com/repos/home/mitch-wiki/releases/latest`;
+    const url = `https://api.github.com/repos/mitchelljfranklin/mitch-wiki/releases/latest`;
 
     let latestVersion = 0;
     try {
@@ -22,7 +22,7 @@ export class VersionService {
     return {
       currentVersion: packageJson?.version,
       latestVersion: latestVersion,
-      releaseUrl: 'https://github.com/home/mitch-wiki/releases',
+      releaseUrl: 'https://github.com/mitchelljfranklin/mitch-wiki/releases',
     };
   }
 }

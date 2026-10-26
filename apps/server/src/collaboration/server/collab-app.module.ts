@@ -14,8 +14,9 @@ import { RedisModule } from '@nestjs-labs/nestjs-ioredis';
 import { RedisConfigService } from '../../integrations/redis/redis-config.service';
 import { CaslModule } from '../../core/casl/casl.module';
 import { CacheModule } from '@nestjs/cache-manager';
-import KeyvRedis from '@keyv/redis';
+import KeyvRedis, { defaultReconnectStrategy } from '@keyv/redis';
 import { PERMISSION_CACHE_TTL_MS } from '../../common/helpers/cache-keys';
+import { parseRedisUrl } from '../../common/helpers';
 
 const collabRedisIsEnabled = !!process.env.REDIS_URL;
 
@@ -46,9 +47,19 @@ const collabRedisIsEnabled = !!process.env.REDIS_URL;
         // single-instance collaboration deployments.
         if (environmentService.isRedisEnabled()) {
           const redisUrl = environmentService.getRedisUrl();
+          const { family, tls } = parseRedisUrl(redisUrl);
           return {
             ttl: PERMISSION_CACHE_TTL_MS,
-            stores: [new KeyvRedis(redisUrl)],
+            stores: [
+              new KeyvRedis({
+                url: redisUrl,
+                socket: {
+                  family,
+                  reconnectStrategy: defaultReconnectStrategy,
+                  ...tls,
+                },
+              }),
+            ],
           };
         }
 

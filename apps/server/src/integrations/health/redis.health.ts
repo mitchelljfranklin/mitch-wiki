@@ -5,6 +5,7 @@ import {
 import { Injectable, Logger } from '@nestjs/common';
 import { EnvironmentService } from '../environment/environment.service';
 import { Redis } from 'ioredis';
+import { parseRedisUrl } from '../../common/helpers';
 
 @Injectable()
 export class RedisHealthIndicator {
@@ -25,8 +26,10 @@ export class RedisHealthIndicator {
     }
 
     try {
-      const redis = new Redis(this.environmentService.getRedisUrl(), {
+      const redisUrl = this.environmentService.getRedisUrl();
+      const redis = new Redis(redisUrl, {
         maxRetriesPerRequest: 15,
+        tls: parseRedisUrl(redisUrl).tls,
       });
 
       await redis.ping();

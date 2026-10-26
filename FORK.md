@@ -10,11 +10,11 @@ The weekly `Upstream Drift` workflow (`.github/workflows/upstream-drift.yml`) op
 |---|---|
 | Upstream | `docmost/docmost`, branch `main` |
 | Fork branch | `master` |
-| Last synced base | `v0.95.0` (`4132dd5`) |
-| Latest upstream | `v0.97.0` — 116 commits, 616 files, 145 files changed on both sides |
-| Fork history | one squashed root commit; run the one-time bootstrap below before merging |
+| Last synced base | `v0.97.0` (`6d117f8c`) |
+| Latest upstream | `v0.97.0` |
+| Fork history | grafted root commit whose parent is upstream `v0.95.0`; see the bootstrap below |
 
-Upstream v0.96–v0.97 adds integrations (GitHub, GitLab, Jira, Linear, Figma, Azure DevOps), WebSocket improvements, trusted-proxy handling, MCP v2, editor fixes, and dependency updates. Expect the first merge to be large; afterwards, smaller weekly syncs are cheap.
+Upstream v0.96–v0.97 added integrations (GitHub, GitLab, Jira, Linear, Figma, Azure DevOps, Slack), WebSocket improvements, trusted-proxy handling, MCP v2, editor fixes, and dependency updates. That merge is done; later weekly syncs are much smaller.
 
 ## Bootstrap fork history (one-time)
 
@@ -68,7 +68,7 @@ gh repo set-default mitchelljfranklin/mitch-wiki   # with two remotes gh otherwi
 
 ## Fork-only files (upstream never has these)
 
-`docs/**` (entire VitePress site), `AGENTS.md`, `FORK.md`, `SECURITY.md`, `PRIVACY.md`, `.github/ISSUE_TEMPLATE/**`, `.github/workflows/docs.yml`, `.github/workflows/upstream-drift.yml`, `.github/workflows/verify-fork.yml`, `.github/upstream-sync.json`, `scripts/fork-check.mjs`, `docker-compose.yml`, the community SSO/OIDC modules (`apps/server/src/core/auth/sso/**`, `apps/server/src/core/auth/providers/**`, `apps/server/src/core/auth/strategies/oidc.strategy.ts`, `apps/server/src/database/repos/auth-{providers,accounts}/**`, `apps/client/src/features/auth/services/sso-service.ts`, `apps/client/src/pages/settings/security-settings.tsx`), `apps/client/src/features/feature-flags/**`, `apps/client/src/features/editor/collab-socket.ts`, `apps/client/src/features/editor/extensions/placeholder.ts`, `apps/client/src/hooks/use-page-title.ts`, `apps/client/src/features/workspace/components/settings/components/workspace-favicon.tsx`, `apps/server/src/integrations/queue/in-process-queue.service.ts`.
+`docs/**` (entire VitePress site), `AGENTS.md`, `FORK.md`, `SECURITY.md`, `PRIVACY.md`, `.github/ISSUE_TEMPLATE/**`, `.github/workflows/docs.yml`, `.github/workflows/upstream-drift.yml`, `.github/workflows/verify-fork.yml`, `.github/upstream-sync.json`, `scripts/fork-check.mjs`, `docker-compose.yml`, the community SSO/OIDC modules (`apps/server/src/core/auth/sso/**`, `apps/server/src/core/auth/providers/**`, `apps/server/src/core/auth/strategies/oidc.strategy.ts`, `apps/server/src/database/repos/auth-{providers,accounts}/**`, `apps/client/src/features/auth/services/sso-service.ts`, `apps/client/src/pages/settings/security-settings.tsx`), `apps/client/src/features/feature-flags/**`, `apps/client/src/features/editor/collab-socket.ts`, `apps/client/src/features/editor/extensions/placeholder.ts`, `apps/client/src/features/workspace/components/settings/components/workspace-favicon.tsx`, `apps/server/src/integrations/queue/in-process-queue.service.ts`.
 
 `README.md` is fork-branded but intentionally small; keep it.
 
@@ -79,10 +79,10 @@ gh repo set-default mitchelljfranklin/mitch-wiki   # with two remotes gh otherwi
 | Redis optional | `environment.service.ts`, `app.module.ts`, `main.ts`, `integrations/queue/queue.module.ts`, `in-process-queue.service.ts`, `health/health.module.ts`, `health/redis.health.ts`, `throttle/throttle.module.ts`, `session/session-activity.service.ts`, `page-update-email-rate-limiter.ts`, `collab-history.service.ts`, `ws/base-realtime.bridge.ts`, `collaboration/extensions/redis-sync/**` | `isRedisEnabled()` gate; conditional `RedisModule`; in-memory cache/throttle/queue/WS fallbacks; `@Optional()` on every Redis service | `pnpm fork:check` |
 | Community SSO/OIDC | Server `core/auth/{sso,providers}/**`, `strategies/oidc.strategy.ts`, `database/repos/auth-{providers,accounts}/**`; client `sso-service.ts`, `security-settings.tsx`, login/invite forms, `App.tsx` route, `workspace-query.ts` | Provider CRUD, OIDC callback with `expectedNonce`, SSO buttons using the DB UUID `provider.id`, `/api/sso/oidc/` in `excludedPaths` | `pnpm fork:check` + one OIDC login |
 | Feature gates / EE stubs | `apps/client/src/features/feature-flags/**`, `apps/server/src/integrations/audit/audit.module.ts`, `license-check.service.ts` | `useHasFeature()` returns `false`; `NoopAuditModule` supplies `AUDIT_SERVICE`; license service returns `false`/`[]`/`'free'` | `pnpm fork:check` |
-| Branding | `apps/client/src/lib/config.ts`, `app-header.tsx`, `auth-layout.tsx`, `home-ai-prompt.tsx`, `share-branding.tsx`, `apps/client/index.html`, `apps/client/public/manifest.json`, `environment.service.ts` (`getMailFromName`), transactional emails/partials, `README.md`, `docs/**` | "Mitch-Wiki" naming and fork links; no "Docmost" user-facing strings | `pnpm fork:check` + `grep -ri docmost apps/client/src` |
+| Branding | `apps/client/src/lib/config.ts`, `app-header.tsx`, `auth-layout.tsx`, `home-ai-prompt.tsx`, `features/public-space/components/docs/docs-footer-branding.tsx`, `pages/public-space/public-space-directory-page.tsx`, `apps/client/public/locales/*/translation.json`, `apps/client/index.html`, `apps/client/public/manifest.json`, `environment.service.ts` (`getMailFromName`), transactional emails/partials, `README.md`, `docs/**` | "Mitch-Wiki" naming and fork links; no "Docmost" strings in client source or translations (comments in server code may keep upstream wording) | `pnpm fork:check` |
 | Collab socket | `apps/client/src/features/editor/collab-socket.ts`, `full-editor.tsx`, `page-editor.tsx`, `extensions/extensions.ts` | Shared Hocuspocus socket with the 5 s release grace period; `use-collaboration-url.ts` stays deleted | `pnpm fork:check` |
 | Editor fixes | `packages/editor-ext/src/lib/search-and-replace/search-and-replace.ts`, `apps/client/src/features/editor/extensions/placeholder.ts` | Storage null guard; bounds-checked placeholder resolution | `pnpm fork:check` |
-| Dependency/toolchain drift | root `package.json`, `apps/*/package.json`, `pnpm-workspace.yaml`, `pnpm-lock.yaml`, `Dockerfile` | pnpm 11, `"type": "module"`, `shamefullyHoist`, `patchedDependencies`, security overrides, Tiptap 3.29.2 / Hocuspocus 4.4.0 / axios 1.18.1, Node 26 image | `pnpm install` + builds |
+| Dependency/toolchain drift | root `package.json`, `apps/*/package.json`, `pnpm-workspace.yaml`, `pnpm-lock.yaml`, `Dockerfile` | pnpm 11, `"type": "module"`, `shamefullyHoist`, `patchedDependencies`, fork-only security overrides, root React 19 devDeps (so Tiptap's peer resolves to React 19), Node 26 image | `pnpm install` + builds |
 | Static UI / favicon | `apps/server/src/integrations/static/static.module.ts` | `fastifyStatic` keeps `index: false`; workspace favicon injection | `pnpm fork:check` |
 | Fork infrastructure | `docker-compose.yml`, `.env.example`, `.github/workflows/release.yml`, `docs/**` | GHCR release flow, 3080/5433 ports, MailHog, optional Redis, VitePress scripts | `pnpm docs:build` + `docker compose build app` |
 
@@ -129,3 +129,4 @@ Then restore the community replacements if the merge overwrote them:
 | Upstream base | Merged on | Notes |
 |---|---|---|
 | `v0.95.0` | 2026-10-26 | Initial fork base; dependency/toolchain bumps (Tiptap 3.29.2, Hocuspocus 4.4.0, pnpm 11, Node 26) |
+| `v0.97.0` | 2026-10-26 | 116 commits. Took upstream Tiptap 3.31.3 / Hocuspocus 4.5.0 / axios 1.20.0 / nx 23.3 / pnpm 11.28.2 and its new integrations + static-asset caching; re-stripped all EE code (AI chat/search, templates, bases, MFA, audit/SIEM, API keys, license/billing, page verification, personal spaces, pdf-render, Typesense) and deleted the dead SIEM email templates; kept the Redis-optional seams, community SSO, collab socket rewrite, and favicon injection. Standardized page titles on upstream `DocumentTitle` (dropped the fork `usePageTitle` hook) and rebranded every "Docmost" string in client source and translations to "Mitch-Wiki". |

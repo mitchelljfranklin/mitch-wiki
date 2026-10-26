@@ -140,8 +140,26 @@ check(
   () => read("apps/client/src/lib/config.ts").includes('return "Mitch-Wiki"'),
 );
 check(
-  "share pages still carry fork branding",
-  () => read("apps/client/src/features/share/components/share-branding.tsx").includes("Mitch-Wiki"),
+  "public/share pages still carry fork branding",
+  () =>
+    read(
+      "apps/client/src/features/public-space/components/docs/docs-footer-branding.tsx",
+    ).includes("Mitch-Wiki"),
+);
+check(
+  "no upstream brand strings in client source",
+  () =>
+    walk("apps/client/src")
+      .filter((file) => /\.(ts|tsx)$/.test(file))
+      .filter((file) => !/\.test\.(ts|tsx)$/.test(file))
+      .every((file) => !/Docmost/.test(read(file))),
+);
+check(
+  "no upstream brand strings in translations",
+  () =>
+    walk("apps/client/public/locales")
+      .filter((file) => file.endsWith("translation.json"))
+      .every((file) => !/Docmost/.test(read(file))),
 );
 check(
   "collab socket rewrite is present",

@@ -13,6 +13,7 @@ import {
 export class UpdateWorkspaceDto extends PartialType(CreateWorkspaceDto) {
   @IsOptional()
   @IsArray()
+  @IsString({ each: true })
   emailDomains: string[];
 
   @IsOptional()
@@ -38,6 +39,14 @@ export class UpdateWorkspaceDto extends PartialType(CreateWorkspaceDto) {
   @IsOptional()
   @IsBoolean()
   disablePublicSharing: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  allowPublicSpaces: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  publicSpacesDirectory: boolean;
 
   @IsOptional()
   @IsBoolean()
@@ -68,4 +77,16 @@ export class UpdateWorkspaceDto extends PartialType(CreateWorkspaceDto) {
   @IsString()
   @IsIn(['read', 'edit'])
   defaultPageEditMode: string;
+
+  @IsOptional()
+  @IsBoolean()
+  aiChatReadOnly: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  aiChatWorkspaceKnowledgeOnly: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  enforceMcpOauth: boolean;
 }

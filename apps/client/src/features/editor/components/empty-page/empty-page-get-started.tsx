@@ -9,11 +9,13 @@ import { Feature } from "@/features/feature-flags/features";
 
 type EmptyPageGetStartedProps = {
   pageId: string;
+  spaceId: string;
   editable: boolean;
 };
 
 export function EmptyPageGetStarted({
   pageId,
+  spaceId,
   editable,
 }: EmptyPageGetStartedProps) {
   const editor = useAtomValue(pageEditorAtom);

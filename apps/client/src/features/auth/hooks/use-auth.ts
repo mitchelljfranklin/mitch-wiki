@@ -27,7 +27,7 @@ import APP_ROUTE, { getPostLoginRedirect } from "@/lib/app-route.ts";
 import { RESET } from "jotai/utils";
 import { useTranslation } from "react-i18next";
 import { isCloud } from "@/lib/config.ts";
-// ee/utils stubs removed — exchangeTokenRedirectUrl, getHostnameUrl no longer available
+import { deleteLocalPageData } from "@/lib/local-page-data.ts";
 
 export default function useAuth() {
   const { t } = useTranslation();
@@ -156,6 +156,7 @@ export default function useAuth() {
 
   const handleLogout = async () => {
     setCurrentUser(RESET);
+    await deleteLocalPageData();
     await logout();
     window.location.replace(`${APP_ROUTE.AUTH.LOGIN}?logout=1`);
   };

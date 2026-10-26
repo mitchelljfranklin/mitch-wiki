@@ -253,6 +253,13 @@ export class EnvironmentService {
     return disable === 'true';
   }
 
+  isBetaPublicSpaces(): boolean {
+    const enabled = this.configService
+      .get<string>('BETA_PUBLIC_SPACES', 'false')
+      .toLowerCase();
+    return enabled === 'true';
+  }
+
   getPostHogHost(): string {
     return this.configService.get<string>('POSTHOG_HOST');
   }
@@ -315,6 +322,31 @@ export class EnvironmentService {
     return val === 'true';
   }
 
+  getAiVectorDriver(): string {
+    return this.configService
+      .get<string>('AI_VECTOR_DRIVER', 'pgvector')
+      .toLowerCase();
+  }
+
+  getTurbopufferApiKey(): string {
+    return this.configService.get<string>('TURBOPUFFER_API_KEY');
+  }
+
+  getTurbopufferRegion(): string {
+    return this.configService.get<string>('TURBOPUFFER_REGION');
+  }
+
+  getTurbopufferBaseUrl(): string {
+    return this.configService.get<string>('TURBOPUFFER_BASE_URL');
+  }
+
+  getTurbopufferNamespacePrefix(): string {
+    return this.configService.get<string>(
+      'TURBOPUFFER_NAMESPACE_PREFIX',
+      'docmost',
+    );
+  }
+
   getOpenAiApiKey(): string {
     return this.configService.get<string>('OPENAI_API_KEY');
   }
@@ -364,5 +396,13 @@ export class EnvironmentService {
       .split(',')
       .map((o) => o.trim())
       .filter(Boolean);
+  }
+
+  getSlackSigningSecret(): string | undefined {
+    return this.configService.get<string>('INTEGRATION_SLACK_SIGNING_SECRET');
+  }
+
+  getAllowedPrivateNetworks(): string {
+    return this.configService.get<string>('ALLOWED_PRIVATE_NETWORKS', 'none');
   }
 }

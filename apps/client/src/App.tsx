@@ -1,43 +1,112 @@
+import { Suspense, useEffect } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
-import SetupWorkspace from "@/pages/auth/setup-workspace.tsx";
-import LoginPage from "@/pages/auth/login";
-import Home from "@/pages/dashboard/home";
-import Page from "@/pages/page/page";
-import AccountSettings from "@/pages/settings/account/account-settings";
-import WorkspaceMembers from "@/pages/settings/workspace/workspace-members";
-import WorkspaceSettings from "@/pages/settings/workspace/workspace-settings";
-import Groups from "@/pages/settings/group/groups";
-import GroupInfo from "./pages/settings/group/group-info";
-import Spaces from "@/pages/settings/space/spaces.tsx";
-import { Error404 } from "@/components/ui/error-404.tsx";
-import AccountPreferences from "@/pages/settings/account/account-preferences.tsx";
-import SpaceHome from "@/pages/space/space-home.tsx";
-import PageRedirect from "@/pages/page/page-redirect.tsx";
 import Layout from "@/components/layouts/global/layout.tsx";
-import InviteSignup from "@/pages/auth/invite-signup.tsx";
-import ForgotPassword from "@/pages/auth/forgot-password.tsx";
-import PasswordReset from "./pages/auth/password-reset";
+import { Error404 } from "@/components/ui/error-404.tsx";
 import { isCloud } from "@/lib/config.ts";
+import { lazyWithPrefetch, prefetchLazyComponents } from "@/lib/lazy-prefetch.ts";
 import { useTranslation } from "react-i18next";
-import SharedPage from "@/pages/share/shared-page.tsx";
-import Shares from "@/pages/settings/shares/shares.tsx";
-import ShareLayout from "@/features/share/components/share-layout.tsx";
-import ShareRedirect from "@/pages/share/share-redirect.tsx";
+import { useRedirectToCloudSelect } from "@/features/feature-flags/use-redirect-to-cloud-select.tsx";
 import { useTrackOrigin } from "@/hooks/use-track-origin";
-import SpacesPage from "@/pages/spaces/spaces.tsx";
-import SpaceTrash from "@/pages/space/space-trash.tsx";
-import FavoritesPage from "@/pages/favorites/favorites-page";
-import LabelPage from "@/pages/label/label-page";
-import SecuritySettings from "@/pages/settings/security-settings";
-import { useRedirectToCloudSelect } from "@/features/feature-flags/use-redirect-to-cloud-select";
+
+const SetupWorkspace = lazyWithPrefetch(
+  () => import("@/pages/auth/setup-workspace.tsx"),
+);
+const LoginPage = lazyWithPrefetch(() => import("@/pages/auth/login"));
+const Home = lazyWithPrefetch(() => import("@/pages/dashboard/home"));
+const Page = lazyWithPrefetch(() => import("@/pages/page/page"), {
+  prefetchFirst: true,
+});
+const AccountSettings = lazyWithPrefetch(
+  () => import("@/pages/settings/account/account-settings"),
+);
+const WorkspaceMembers = lazyWithPrefetch(
+  () => import("@/pages/settings/workspace/workspace-members"),
+);
+const WorkspaceSettings = lazyWithPrefetch(
+  () => import("@/pages/settings/workspace/workspace-settings"),
+);
+const Groups = lazyWithPrefetch(() => import("@/pages/settings/group/groups"));
+const GroupInfo = lazyWithPrefetch(
+  () => import("./pages/settings/group/group-info"),
+);
+const Spaces = lazyWithPrefetch(
+  () => import("@/pages/settings/space/spaces.tsx"),
+);
+const AccountPreferences = lazyWithPrefetch(
+  () => import("@/pages/settings/account/account-preferences.tsx"),
+);
+const SpaceHome = lazyWithPrefetch(
+  () => import("@/pages/space/space-home.tsx"),
+);
+const PageRedirect = lazyWithPrefetch(
+  () => import("@/pages/page/page-redirect.tsx"),
+);
+const InviteSignup = lazyWithPrefetch(
+  () => import("@/pages/auth/invite-signup.tsx"),
+);
+const ForgotPassword = lazyWithPrefetch(
+  () => import("@/pages/auth/forgot-password.tsx"),
+);
+const PasswordReset = lazyWithPrefetch(
+  () => import("./pages/auth/password-reset"),
+);
+const SecuritySettings = lazyWithPrefetch(
+  () => import("@/pages/settings/security-settings"),
+);
+const SharedPage = lazyWithPrefetch(
+  () => import("@/pages/share/shared-page.tsx"),
+);
+const Shares = lazyWithPrefetch(
+  () => import("@/pages/settings/shares/shares.tsx"),
+);
+const ShareLayout = lazyWithPrefetch(
+  () => import("@/features/share/components/share-layout.tsx"),
+);
+const ShareRedirect = lazyWithPrefetch(
+  () => import("@/pages/share/share-redirect.tsx"),
+);
+const PublicSpacePage = lazyWithPrefetch(
+  () => import("@/pages/public-space/public-space-page.tsx"),
+);
+const PublicSpaceLayout = lazyWithPrefetch(
+  () => import("@/features/public-space/components/public-space-layout.tsx"),
+);
+const PublicSpaceDirectoryPage = lazyWithPrefetch(
+  () => import("@/pages/public-space/public-space-directory-page.tsx"),
+);
+const SpacesPage = lazyWithPrefetch(
+  () => import("@/pages/spaces/spaces.tsx"),
+);
+const SpaceTrash = lazyWithPrefetch(
+  () => import("@/pages/space/space-trash.tsx"),
+);
+const FavoritesPage = lazyWithPrefetch(
+  () => import("@/pages/favorites/favorites-page"),
+);
+const LabelPage = lazyWithPrefetch(() => import("@/pages/label/label-page"));
+const Integrations = lazyWithPrefetch(
+  () => import("@/features/integration/pages/integrations.tsx"),
+);
+const Connections = lazyWithPrefetch(
+  () => import("@/features/integration/pages/connections.tsx"),
+);
 
 export default function App() {
   const { t } = useTranslation();
   useRedirectToCloudSelect();
   useTrackOrigin();
 
+  useEffect(() => {
+    // the dev server would transform every route module on each reload
+    if (import.meta.env.DEV) {
+      return;
+    }
+    const timer = setTimeout(prefetchLazyComponents, 3000);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
-    <>
+    <Suspense fallback={null}>
       <Routes>
         <Route index element={<Navigate to="/home" />} />
         <Route path={"/login"} element={<LoginPage />} />
@@ -57,8 +126,23 @@ export default function App() {
           <Route path={"/share/p/:pageSlug"} element={<SharedPage />} />
         </Route>
 
+        <Route path={"/docs"} element={<PublicSpaceDirectoryPage />} />
+        <Route element={<PublicSpaceLayout />}>
+          <Route path={"/docs/:spaceSlug"} element={<PublicSpacePage />} />
+          <Route
+            path={"/docs/:spaceSlug/:pageSlug"}
+            element={<PublicSpacePage />}
+          />
+        </Route>
+
         <Route path={"/share/:shareId"} element={<ShareRedirect />} />
         <Route path={"/p/:pageSlug"} element={<PageRedirect />} />
+        <Route
+          path={"/integrations/slack/link"}
+          element={
+            <Navigate to="/settings/account/connections?connect=slack" replace />
+          }
+        />
 
         <Route element={<Layout />}>
           <Route path={"/home"} element={<Home />} />
@@ -78,6 +162,7 @@ export default function App() {
               path={"account/preferences"}
               element={<AccountPreferences />}
             />
+            <Route path={"account/connections"} element={<Connections />} />
             <Route path={"workspace"} element={<WorkspaceSettings />} />
             <Route path={"members"} element={<WorkspaceMembers />} />
             <Route path={"groups"} element={<Groups />} />
@@ -85,11 +170,12 @@ export default function App() {
             <Route path={"spaces"} element={<Spaces />} />
             <Route path={"sharing"} element={<Shares />} />
             <Route path={"security"} element={<SecuritySettings />} />
+            <Route path={"integrations"} element={<Integrations />} />
           </Route>
         </Route>
 
         <Route path="*" element={<Error404 />} />
       </Routes>
-    </>
+    </Suspense>
   );
 }

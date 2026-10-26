@@ -1,10 +1,10 @@
 import {Container} from "@mantine/core";
 import SpaceHomeTabs from "@/features/space/components/space-home-tabs.tsx";
+import SpacePublicNotice from "@/features/public-space/components/space-public-notice.tsx";
 import {useParams} from "react-router-dom";
 import {useGetSpaceBySlugQuery} from "@/features/space/queries/space-query.ts";
-import {usePageTitle} from "@/hooks/use-page-title";
-import {Helmet} from "react-helmet-async";
 import {useTranslation} from "react-i18next";
+import { DocumentTitle } from "@/components/ui/document-title.tsx";
 
 export default function SpaceHome() {
     const {t} = useTranslation();
@@ -13,10 +13,9 @@ export default function SpaceHome() {
 
     return (
         <>
-            <Helmet>
-                <title>{usePageTitle(space?.name || t('Overview'))}</title>
-            </Helmet>
+            <DocumentTitle title={space?.name || t('Overview')} />
             <Container size={"900"} pt="xl">
+                {space && <SpacePublicNotice space={space} />}
                 {space && <SpaceHomeTabs/>}
             </Container>
         </>

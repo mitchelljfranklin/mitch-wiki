@@ -4,6 +4,7 @@ import GlobalAppShell from "@/components/layouts/global/global-app-shell.tsx";
 import { SearchSpotlight } from "@/features/search/components/search-spotlight.tsx";
 import React from "react";
 import { useGetSpaceBySlugQuery } from "@/features/space/queries/space-query.ts";
+import { AppErrorBoundary } from "@/components/ui/app-error-boundary.tsx";
 
 export default function Layout() {
   const { spaceSlug } = useParams();
@@ -12,7 +13,9 @@ export default function Layout() {
   return (
     <UserProvider>
       <GlobalAppShell>
-        <Outlet />
+        <AppErrorBoundary>
+          <Outlet />
+        </AppErrorBoundary>
       </GlobalAppShell>
       <SearchSpotlight spaceId={space?.id} />
     </UserProvider>

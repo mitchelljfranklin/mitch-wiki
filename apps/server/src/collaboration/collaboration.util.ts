@@ -1,4 +1,5 @@
 import { StarterKit } from '@tiptap/starter-kit';
+import { Document } from '@tiptap/extension-document';
 import { TextAlign } from '@tiptap/extension-text-align';
 import { Superscript } from '@tiptap/extension-superscript';
 import SubScript from '@tiptap/extension-subscript';
@@ -45,9 +46,24 @@ import {
   TransclusionSource,
   TransclusionReference,
   BaseEmbed,
+  Footnotes,
+  Footnote,
+  FootnoteReference,
+  IntegrationCard,
+  IntegrationMention,
+  Tabs,
+  Tab,
+  TabLabel,
+  TabPanel,
 } from '@docmost/editor-ext';
-import { generateText, getSchema, JSONContent } from '@tiptap/core';
+import {
+  extensions as coreExtensions,
+  generateText,
+  getSchema,
+  JSONContent,
+} from '@tiptap/core';
 import { generateHTML, generateJSON } from '../common/helpers/prosemirror/html';
+import { collapseBlankLines } from '../common/helpers';
 // @tiptap/html library works best for generating prosemirror json state but not HTML
 // see: https://github.com/ueberdosis/tiptap/issues/5352
 // see:https://github.com/ueberdosis/tiptap/issues/4089
@@ -57,11 +73,16 @@ import * as Y from 'yjs';
 import { Logger } from '@nestjs/common';
 
 export const tiptapExtensions = [
+  coreExtensions.TextDirection.configure({ direction: 'auto' }),
   StarterKit.configure({
+    document: false,
     codeBlock: false,
     link: false,
     trailingNode: false,
     heading: false,
+  }),
+  Document.extend({
+    content: 'block+ footnotes?',
   }),
   Heading,
   UniqueID.configure({
@@ -87,6 +108,10 @@ export const tiptapExtensions = [
   Details,
   DetailsContent,
   DetailsSummary,
+  Tabs,
+  Tab,
+  TabLabel,
+  TabPanel,
   CustomTable,
   TableCell,
   TableRow,
@@ -110,7 +135,12 @@ export const tiptapExtensions = [
   Status,
   TransclusionSource,
   TransclusionReference,
-  BaseEmbed
+  BaseEmbed,
+  Footnotes,
+  Footnote,
+  FootnoteReference,
+  IntegrationCard,
+  IntegrationMention
 ] as any;
 
 export function jsonToHtml(tiptapJson: any) {
@@ -129,7 +159,7 @@ export function htmlToJson(html: string) {
 }
 
 export function jsonToText(tiptapJson: JSONContent) {
-  return generateText(tiptapJson, tiptapExtensions);
+  return collapseBlankLines(generateText(tiptapJson, tiptapExtensions));
 }
 
 export function jsonToNode(tiptapJson: JSONContent) {
@@ -228,4 +258,8 @@ export function prosemirrorNodeToYElement(node: any): Y.XmlElement | Y.XmlText {
 export function jsonToMarkdown(tiptapJson: any): string {
   const html = jsonToHtml(tiptapJson);
   return htmlToMarkdown(html);
+}
+
+export function isRenderableObject(value: unknown): boolean {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }

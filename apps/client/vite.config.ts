@@ -11,6 +11,11 @@ export default defineConfig(({ mode }) => {
     FILE_IMPORT_SIZE_LIMIT,
     DRAWIO_URL,
     COLLAB_URL,
+    BILLING_TRIAL_DAYS,
+    POSTHOG_HOST,
+    POSTHOG_KEY,
+    AI_VECTOR_DRIVER,
+    BETA_PUBLIC_SPACES,
   } = loadEnv(mode, envPath, "");
 
   return {
@@ -21,6 +26,11 @@ export default defineConfig(({ mode }) => {
         FILE_IMPORT_SIZE_LIMIT,
         DRAWIO_URL,
         COLLAB_URL,
+        BILLING_TRIAL_DAYS,
+        POSTHOG_HOST,
+        POSTHOG_KEY,
+        AI_VECTOR_DRIVER,
+        BETA_PUBLIC_SPACES,
       },
       APP_VERSION: JSON.stringify(process.env.npm_package_version),
     },

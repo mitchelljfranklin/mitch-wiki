@@ -2,7 +2,7 @@
   "upstream": "docmost/docmost",
   "upstreamBranch": "main",
   "forkBranch": "master",
-  "baseRef": "v0.95.0",
-  "baseSha": "4132dd597c956a27423607d008708c0e214690da",
+  "baseRef": "v0.97.0",
+  "baseSha": "6d117f8c52e54e810d5931f153eb2d31c904efb3",
   "syncedAt": "2026-10-26"
 }
