@@ -45,7 +45,7 @@ git reset --hard graft/upstream
 git push --force-with-lease origin master
 ```
 
-After this, `git merge-base master upstream/v0.97.0` returns `v0.95.0`, and the drift workflow can predict conflicts. Until then it still reports upstream commits and overlapping files, but it cannot preview conflicts.
+After this, `git merge-base master v0.97.0` returns `v0.95.0`, and the drift workflow can predict conflicts. Until then it still reports upstream commits and overlapping files, but it cannot preview conflicts.
 
 ## Per-clone setup
 
@@ -89,9 +89,9 @@ gh repo set-default mitchelljfranklin/mitch-wiki   # with two remotes gh otherwi
 ## Merge playbook
 
 1. **Pre-flight**: wait for the `upstream-sync` issue, then `git fetch upstream main --tags`. Review the issue's security-sensitive files and hotspots. Confirm this manifest is current.
-2. **Bootstrap check**: `git merge-base master upstream/v0.97.0` must return a commit. If it is empty, run the bootstrap above first.
+2. **Bootstrap check**: `git merge-base master v0.97.0` must return a commit. If it is empty, run the bootstrap above first.
 3. **Branch**: `git switch -c upstream-sync/v0.97.0`.
-4. **Merge**: `git merge upstream/v0.97.0` (use `upstream/main` only if you deliberately want unreleased commits).
+4. **Merge**: `git merge v0.97.0` (tags are local refs, not `upstream/v0.97.0`; use `upstream/main` only if you deliberately want unreleased commits).
 5. **Conflict policy**:
    - **Enterprise code** (`apps/*/src/ee/**`, `.gitmodules`, EE imports) → delete, never resolve.
    - **Fork-owned files** (`docs/**`, `FORK.md`, `AGENTS.md`, `SECURITY.md`, `PRIVACY.md`, `.github/ISSUE_TEMPLATE/**`, `docker-compose.yml`) → keep ours (`git checkout --ours -- <paths>`).
