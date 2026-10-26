@@ -25,6 +25,15 @@ services:
       MAIL_FROM_ADDRESS: 'noreply@mitch-wiki.local'
       MAIL_FROM_NAME: 'Mitch Wiki'
       DISABLE_TELEMETRY: 'true'
+      # Integrations (optional). See docs/self-hosting/integrations.md
+      # INTEGRATION_GITHUB_CLIENT_ID: ''
+      # INTEGRATION_GITHUB_CLIENT_SECRET: ''
+      # INTEGRATION_GITHUB_URL: ''
+      # INTEGRATION_LINEAR_CLIENT_ID: ''
+      # INTEGRATION_LINEAR_CLIENT_SECRET: ''
+      # INTEGRATION_FIGMA_CLIENT_ID: ''
+      # INTEGRATION_FIGMA_CLIENT_SECRET: ''
+      # ALLOWED_PRIVATE_NETWORKS: 'none'
     ports:
       - "3080:3000"
     restart: unless-stopped

@@ -25,7 +25,7 @@ To configure your application, set the following environment variables. These va
 
 | Variable    | Example                  | Description                                             |
 | ----------- | ------------------------ |---------------------------------------------------------|
-| `REDIS_URL` | `redis://127.0.0.1:6379` | The connection URL for your Redis server.<br/> **Format**: `redis://username:password@host:port/db-number` |
+| `REDIS_URL` | `redis://127.0.0.1:6379` | Optional. The connection URL for your Redis server.<br/> **Format**: `redis://username:password@host:port/db-number`. Without it, caching, queues, and collab coordination use single-instance in-memory fallbacks. |
 
 ## Storage Configuration
 
@@ -89,19 +89,27 @@ To configure your application, set the following environment variables. These va
 | `MAIL_FROM_ADDRESS` | `hello@example.com` | The email address that emails will be sent from.                |
 | `MAIL_FROM_NAME`    | `Mitch Wiki`           | The name that emails will be sent from.                         |
 
+## Integrations
+
+See [Integrations](/self-hosting/integrations) for provider setup and callback URLs. Each provider reads its own OAuth app credentials.
+
+| Variable | Example | Description |
+|---|---|---|
+| `INTEGRATION_GITHUB_CLIENT_ID` | | GitHub OAuth app client ID. |
+| `INTEGRATION_GITHUB_CLIENT_SECRET` | | GitHub OAuth app client secret. |
+| `INTEGRATION_GITHUB_URL` | `https://github.example.com` | Optional. GitHub Enterprise Server root. Leave unset for github.com. |
+| `INTEGRATION_LINEAR_CLIENT_ID` | | Linear OAuth app client ID. |
+| `INTEGRATION_LINEAR_CLIENT_SECRET` | | Linear OAuth app client secret. |
+| `INTEGRATION_FIGMA_CLIENT_ID` | | Figma OAuth app client ID. |
+| `INTEGRATION_FIGMA_CLIENT_SECRET` | | Figma OAuth app client secret. |
+| `ALLOWED_PRIVATE_NETWORKS` | `192.168.1.0/24` | Optional. Comma-separated `[all\|none,]CIDR[:port]` allowlist for outbound integration requests to private networks. Defaults to `none`; loopback, link-local, metadata, and reserved ranges are always blocked. |
+
 ## AI Configuration
 
-| Variable                      | Example                        | Description                                                                                                                                                              |
-|-------------------------------|--------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `AI_DRIVER`                   | `openai`                       | The AI provider to use. Options: `openai`, `openai-compatible`, `gemini`, `ollama`.                                                                                      |
-| `AI_EMBEDDING_MODEL`          | `text-embedding-3-small`       | The model used for generating vector embeddings.                                                                                                                         |
-| `AI_COMPLETION_MODEL`         | `gpt-4o-mini`                  | The model used for answering questions.                                                                                                                                  |
-| `AI_EMBEDDING_DIMENSION`      | `1536`                         | Optional. The vector dimension for pgvector. Auto-detected for preset models. Supported values: `768`, `1024`, `1536`, `2000`, `3072`.                                   |
-| `AI_EMBEDDING_SUPPORTS_MRL`   | `true`                         | Optional. Controls whether the `dimensions` parameter is sent to the embedding model API. Defaults to model preset if available, otherwise `true`. Set to `false` for models that do not accept a `dimensions` parameter. |
-| `OPENAI_API_KEY`              | `sk-proj-xxxxx`                | Your OpenAI API key. Required when `AI_DRIVER` is `openai` or `openai-compatible`.                                                                                       |
-| `OPENAI_API_URL`              | `https://api.openai.com/v1`    | Optional. Custom API endpoint for Azure OpenAI or compatible providers.                                                                                                  |
-| `GEMINI_API_KEY`              | `AIzaSyxxxxx`                  | Your Google Gemini API key. Required when `AI_DRIVER=gemini`.                                                                                                            |
-| `OLLAMA_API_URL`              | `http://localhost:11434`       | The URL of your Ollama instance. Required when `AI_DRIVER=ollama`.                                                                                                       |
+AI features (chat and AI search) are enterprise-only upstream and are not part of
+Mitch-Wiki. The `AI_*`, `OPENAI_*`, `GEMINI_API_KEY`, and `OLLAMA_API_URL`
+variables are still accepted for upstream compatibility but nothing in this fork
+uses them; leave them unset.
 
 ## DRAW.IO (Diagrams.net) configuration
 The default Draw.io embed url is `https://embed.diagrams.net`.

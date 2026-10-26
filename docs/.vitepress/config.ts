@@ -16,6 +16,7 @@ const sidebar = [
       { text: "Installation", link: "/self-hosting/installation" },
       { text: "Configuration", link: "/self-hosting/configuration" },
       { text: "Environment Variables", link: "/self-hosting/environment-variables" },
+      { text: "Integrations", link: "/self-hosting/integrations" },
       { text: "Reverse Proxy", link: "/self-hosting/reverse-proxy/" },
       { text: "Development", link: "/self-hosting/development" },
     ],
