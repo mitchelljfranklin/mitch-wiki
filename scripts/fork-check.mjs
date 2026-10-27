@@ -121,8 +121,15 @@ check(
     read("apps/server/src/app.module.ts").includes("redisIsEnabled"),
 );
 check(
-  "in-process queue fallback exists",
-  () => exists("apps/server/src/integrations/queue/in-process-queue.service.ts"),
+  "in-process queue fallback dispatches to processors",
+  () =>
+    exists("apps/server/src/integrations/queue/in-process-queue.service.ts") &&
+    read("apps/server/src/integrations/queue/in-process-queue.service.ts").includes(
+      "DiscoveryService",
+    ) &&
+    read("apps/server/src/integrations/queue/in-process-queue.service.ts").includes(
+      "instance.process",
+    ),
 );
 check(
   "Redis-dependent services inject @Optional",

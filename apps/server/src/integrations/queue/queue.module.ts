@@ -1,4 +1,5 @@
 import { DynamicModule, Global, Module } from '@nestjs/common';
+import { DiscoveryModule } from '@nestjs/core';
 import { BullModule } from '@nestjs/bullmq';
 import { EnvironmentService } from '../environment/environment.service';
 import { createRetryStrategy, parseRedisUrl } from '../../common/helpers';
@@ -132,10 +133,12 @@ export class QueueModule {
       providers.push(GeneralQueueProcessor);
       exports.push(BullModule);
     } else {
-      // Redis is NOT available: provide in-process queue fallback via EventEmitter2.
+      // Redis is NOT available: provide in-process queue fallback.
       // Mock queue tokens ensure @InjectQueue() decorators resolve without errors,
-      // and job dispatch is handled by emitting events that @OnEvent listeners can handle.
-      providers.push(InProcessQueueService);
+      // and InProcessQueueService dispatches each job to the matching
+      // @Processor() class so imports, exports, emails and history keep working.
+      imports.push(DiscoveryModule);
+      providers.push(InProcessQueueService, GeneralQueueProcessor);
 
       for (const queueName of ALL_QUEUE_NAMES) {
         // The token format matches @nestjs/bullmq's getQueueToken():
@@ -145,12 +148,11 @@ export class QueueModule {
         providers.push({
           provide: BULL_QUEUE_TOKEN,
           useFactory: (inProcessService: InProcessQueueService) => ({
-            add: (jobName: string, data: unknown) => {
-              inProcessService.add(queueName, jobName, data);
-              return Promise.resolve({
-                id: `in-process-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
-              });
-            },
+            add: (
+              jobName: string,
+              data: unknown,
+              opts?: { delay?: number; jobId?: string },
+            ) => inProcessService.add(queueName, jobName, data, opts),
             // BullMQ repeatables need a worker, which only exists with Redis.
             // Accept the call so bootstrap (integration token refresh) succeeds.
             upsertJobScheduler: () =>
