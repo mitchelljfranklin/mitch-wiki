@@ -25,7 +25,7 @@ To configure your application, set the following environment variables. These va
 
 | Variable    | Example                  | Description                                             |
 | ----------- | ------------------------ |---------------------------------------------------------|
-| `REDIS_URL` | `redis://127.0.0.1:6379` | Optional. The connection URL for your Redis server.<br/> **Format**: `redis://username:password@host:port/db-number`. Without it, caching, queues, and collab coordination use single-instance in-memory fallbacks. |
+| `REDIS_URL` | `redis://127.0.0.1:6379` | Optional. The connection URL for your Redis server.<br/> **Format**: `redis://username:password@host:port/db-number`. Without it, caching and collab coordination use single-instance in-memory fallbacks and background jobs (imports, exports, email, history) run in the web process. |
 
 ## Storage Configuration
 

@@ -22,7 +22,7 @@ The backend server is built using the [Nest.js](https://nestjs.com/) framework.
 To run Mitch-Wiki, you'll need the following:
 - **Node.js**: >= 22
 - **Postgres**: >= 16
-- **Redis/Valkey** >=7
+- **Redis/Valkey** >=7 (optional — only needed for multi-instance deployments or to keep queued jobs across restarts; without it, background jobs run in-process)
 
 ### Development setup
 Make sure you have `pnpm` installed `npm install -g pnpm`.
